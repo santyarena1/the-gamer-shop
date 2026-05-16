@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  avatar    String?
+  phone     String?
+  position  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks        Task[]      @relation("AssignedTo")
+  createdTasks Task[]      @relation("CreatedBy")
+  salaries     Salary[]
+  debts        Debt[]
+  purchases    Purchase[]
+  investments  Investment[]
+
+  @@map("users")
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  status       TaskStatus @default(PENDING)
+  priority     Priority   @default(MEDIUM)
+  dueDate      DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignedTo   User   @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assignedToId String
+  createdBy    User   @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById  String
+
+  @@map("tasks")
+}
+
+model Salary {
+  id        String    @id @default(cuid())
+  amount    Decimal   @db.Decimal(10, 2)
+  month     Int
+  year      Int
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@map("salaries")
+}
+
+model Debt {
+  id          String    @id @default(cuid())
+  description String
+  amount      Decimal   @db.Decimal(10, 2)
+  paid        Boolean   @default(false)
+  paidAt      DateTime?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@map("debts")
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  item        String
+  description String?
+  amount      Decimal  @db.Decimal(10, 2)
+  category    String   @default("Componente")
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@map("purchases")
+}
+
+model Investment {
+  id          String           @id @default(cuid())
+  amount      Decimal          @db.Decimal(10, 2)
+  description String
+  status      InvestmentStatus @default(ACTIVE)
+  returnRate  Decimal?         @db.Decimal(5, 2)
+  startDate   DateTime         @default(now())
+  endDate     DateTime?
+  createdAt   DateTime         @default(now())
+
+  investor   User   @relation(fields: [investorId], references: [id])
+  investorId String
+
+  @@map("investments")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}

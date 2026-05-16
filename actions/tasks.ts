@@ -1,0 +1,55 @@
+"use server"
+
+import { revalidatePath } from "next/cache"
+import { db } from "@/lib/db"
+import { getSession } from "@/lib/session"
+
+export async function createTask(prevState: string | null, formData: FormData) {
+  const session = await getSession()
+  if (!session || session.role !== "ADMIN") return "No autorizado"
+
+  const title = formData.get("title") as string
+  const description = formData.get("description") as string
+  const assignedToId = formData.get("assignedToId") as string
+  const priority = formData.get("priority") as string
+  const dueDate = formData.get("dueDate") as string
+
+  if (!title || !assignedToId) return "Título y empleado son obligatorios"
+
+  await db.task.create({
+    data: {
+      title,
+      description: description || null,
+      assignedToId,
+      createdById: session.userId,
+      priority: priority as any || "MEDIUM",
+      dueDate: dueDate ? new Date(dueDate) : null,
+    },
+  })
+
+  revalidatePath("/tareas")
+  return null
+}
+
+export async function updateTaskStatus(taskId: string, status: string) {
+  const session = await getSession()
+  if (!session) throw new Error("No autorizado")
+
+  const task = await db.task.findUnique({ where: { id: taskId } })
+  if (!task) throw new Error("Tarea no encontrada")
+
+  if (session.role !== "ADMIN" && task.assignedToId !== session.userId) {
+    throw new Error("No autorizado")
+  }
+
+  await db.task.update({ where: { id: taskId }, data: { status: status as any } })
+  revalidatePath("/tareas")
+}
+
+export async function deleteTask(taskId: string) {
+  const session = await getSession()
+  if (!session || session.role !== "ADMIN") throw new Error("No autorizado")
+
+  await db.task.delete({ where: { id: taskId } })
+  revalidatePath("/tareas")
+}
