@@ -1,8 +1,8 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { revalidateEmployee } from "@/lib/revalidate"
 
 export async function createTask(prevState: string | null, formData: FormData) {
   const session = await getSession()
@@ -27,7 +27,7 @@ export async function createTask(prevState: string | null, formData: FormData) {
     },
   })
 
-  revalidatePath("/tareas")
+  revalidateEmployee(assignedToId)
   return null
 }
 
@@ -42,14 +42,14 @@ export async function updateTaskStatus(taskId: string, status: string) {
     throw new Error("No autorizado")
   }
 
-  await db.task.update({ where: { id: taskId }, data: { status: status as any } })
-  revalidatePath("/tareas")
+  const updated = await db.task.update({ where: { id: taskId }, data: { status: status as any } })
+  revalidateEmployee(updated.assignedToId)
 }
 
 export async function deleteTask(taskId: string) {
   const session = await getSession()
   if (!session || session.role !== "ADMIN") throw new Error("No autorizado")
 
-  await db.task.delete({ where: { id: taskId } })
-  revalidatePath("/tareas")
+  const task = await db.task.delete({ where: { id: taskId } })
+  revalidateEmployee(task.assignedToId)
 }

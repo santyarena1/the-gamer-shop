@@ -1,10 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import { useActionState } from "react"
 import { login } from "@/actions/auth"
+import ForgotPasswordForm from "./ForgotPasswordForm"
 
-export default function LoginForm() {
+type Props = {
+  canResetPassword: boolean
+}
+
+export default function LoginForm({ canResetPassword }: Props) {
+  const [showReset, setShowReset] = useState(false)
   const [error, action, pending] = useActionState(login, null)
+
+  if (showReset && canResetPassword) {
+    return <ForgotPasswordForm onBack={() => setShowReset(false)} />
+  }
 
   return (
     <form action={action} className="space-y-4">
@@ -42,6 +53,15 @@ export default function LoginForm() {
       >
         {pending ? "Entrando..." : "Entrar"}
       </button>
+      {canResetPassword && (
+        <button
+          type="button"
+          onClick={() => setShowReset(true)}
+          className="w-full py-2 text-sm text-white/50 hover:text-white transition-colors"
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
+      )}
     </form>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useActionState } from "react"
 import { createPurchase, deletePurchase } from "@/actions/purchases"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { useAppDate } from "@/hooks/useAppDate"
 
 type Purchase = {
   id: string
@@ -18,11 +19,13 @@ type Employee = { id: string; name: string }
 
 const CATEGORIES = ["Componente", "Periférico", "Herramienta", "Software", "Otro"]
 
-export default function PurchasesView({ purchases, employees, isAdmin }: {
+export default function PurchasesView({ purchases, employees, isAdmin, employeeId }: {
   purchases: Purchase[]
   employees: Employee[]
   isAdmin: boolean
+  employeeId?: string
 }) {
+  const { iso: appDateIso } = useAppDate()
   const [showCreate, setShowCreate] = useState(false)
 
   const [createError, createAction] = useActionState(async (prev: string | null, fd: FormData) => {
@@ -60,7 +63,7 @@ export default function PurchasesView({ purchases, employees, isAdmin }: {
             <div key={p.id} className="bg-[#141414] border border-white/10 rounded-xl p-4 flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">{p.item}</p>
-                <p className="text-xs text-white/40">{p.user.name} · {p.category} · {formatDate(p.date)}</p>
+                <p className="text-xs text-white/40">{employeeId ? `${p.category} · ${formatDate(p.date)}` : `${p.user.name} · ${p.category} · ${formatDate(p.date)}`}</p>
                 {p.description && <p className="text-xs text-white/30 mt-0.5">{p.description}</p>}
               </div>
               <div className="flex items-center gap-3">
@@ -87,13 +90,17 @@ export default function PurchasesView({ purchases, employees, isAdmin }: {
               <button onClick={() => setShowCreate(false)} className="text-white/40 hover:text-white text-xl">×</button>
             </div>
             <form action={createAction} className="space-y-3">
-              <div>
-                <label className="text-xs text-white/60 mb-1 block">Empleado *</label>
-                <select name="userId" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-                  <option value="">Seleccionar</option>
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
+              {employeeId ? (
+                <input type="hidden" name="userId" value={employeeId} />
+              ) : (
+                <div>
+                  <label className="text-xs text-white/60 mb-1 block">Empleado *</label>
+                  <select name="userId" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
+                    <option value="">Seleccionar</option>
+                    {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-white/60 mb-1 block">Item *</label>
                 <input name="item" required placeholder="Ej: RTX 4070, Teclado mecánico..." className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
@@ -116,7 +123,7 @@ export default function PurchasesView({ purchases, employees, isAdmin }: {
               </div>
               <div>
                 <label className="text-xs text-white/60 mb-1 block">Fecha</label>
-                <input name="date" type="date" defaultValue={new Date().toISOString().split("T")[0]} className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
+                <input name="date" type="date" defaultValue={appDateIso} key={appDateIso} className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
               </div>
               {createError && <p className="text-red-400 text-xs">{createError}</p>}
               <button type="submit" className="w-full py-2 bg-green-500 hover:bg-green-400 text-black text-sm font-semibold rounded-lg transition-colors mt-2">

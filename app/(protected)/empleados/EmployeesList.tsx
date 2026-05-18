@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useActionState } from "react"
 import { createEmployee, updateEmployee, resetPassword } from "@/actions/employees"
 
@@ -12,6 +13,8 @@ type Employee = {
   phone: string | null
   active: boolean
   createdAt: Date
+  baseSalary: unknown | null
+  ipcAdjusted: boolean
 }
 
 export default function EmployeesList({ employees, isAdmin }: { employees: Employee[]; isAdmin: boolean }) {
@@ -60,8 +63,8 @@ export default function EmployeesList({ employees, isAdmin }: { employees: Emplo
             key={emp.id}
             className="bg-[#141414] border border-white/10 rounded-xl p-4 flex items-center justify-between"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400 font-bold">
+            <Link href={`/empleados/${emp.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400 font-bold shrink-0">
                 {emp.name.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -69,7 +72,7 @@ export default function EmployeesList({ employees, isAdmin }: { employees: Emplo
                 <p className="text-xs text-white/40">{emp.email}</p>
                 {emp.position && <p className="text-xs text-white/30 mt-0.5">{emp.position}</p>}
               </div>
-            </div>
+            </Link>
             <div className="flex items-center gap-3">
               <span className={`text-xs px-2 py-0.5 rounded-full ${emp.role === "ADMIN" ? "bg-purple-500/20 text-purple-400" : "bg-blue-500/20 text-blue-400"}`}>
                 {emp.role === "ADMIN" ? "Admin" : "Empleado"}
@@ -77,6 +80,9 @@ export default function EmployeesList({ employees, isAdmin }: { employees: Emplo
               <span className={`text-xs px-2 py-0.5 rounded-full ${emp.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
                 {emp.active ? "Activo" : "Inactivo"}
               </span>
+              {emp.ipcAdjusted && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">IPC</span>
+              )}
               {isAdmin && (
                 <div className="flex gap-2">
                   <button
@@ -106,6 +112,12 @@ export default function EmployeesList({ employees, isAdmin }: { employees: Emplo
             <Field label="Contraseña" name="password" type="password" required />
             <Field label="Cargo" name="position" />
             <Field label="Teléfono" name="phone" />
+            <Field label="Sueldo base" name="baseSalary" type="number" step="0.01" />
+            <label className="flex items-center gap-2 text-sm text-white/70">
+              <input type="hidden" name="ipcAdjusted" value="false" />
+              <input type="checkbox" name="ipcAdjusted" value="true" className="rounded" />
+              Ajuste por IPC mensual
+            </label>
             <div>
               <label className="text-xs text-white/60 mb-1 block">Rol</label>
               <select name="role" className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
@@ -127,6 +139,24 @@ export default function EmployeesList({ employees, isAdmin }: { employees: Emplo
             <Field label="Email" name="email" type="email" defaultValue={editing.email} required />
             <Field label="Cargo" name="position" defaultValue={editing.position ?? ""} />
             <Field label="Teléfono" name="phone" defaultValue={editing.phone ?? ""} />
+            <Field
+              label="Sueldo base"
+              name="baseSalary"
+              type="number"
+              step="0.01"
+              defaultValue={editing.baseSalary != null ? String(editing.baseSalary) : ""}
+            />
+            <label className="flex items-center gap-2 text-sm text-white/70">
+              <input type="hidden" name="ipcAdjusted" value="false" />
+              <input
+                type="checkbox"
+                name="ipcAdjusted"
+                value="true"
+                defaultChecked={editing.ipcAdjusted}
+                className="rounded"
+              />
+              Ajuste por IPC mensual
+            </label>
             <div>
               <label className="text-xs text-white/60 mb-1 block">Rol</label>
               <select name="role" defaultValue={editing.role} className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
@@ -175,8 +205,8 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
   )
 }
 
-function Field({ label, name, type = "text", defaultValue = "", required = false }: {
-  label: string; name: string; type?: string; defaultValue?: string; required?: boolean
+function Field({ label, name, type = "text", defaultValue = "", required = false, step }: {
+  label: string; name: string; type?: string; defaultValue?: string; required?: boolean; step?: string
 }) {
   return (
     <div>
@@ -186,6 +216,7 @@ function Field({ label, name, type = "text", defaultValue = "", required = false
         type={type}
         defaultValue={defaultValue}
         required={required}
+        step={step}
         className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
       />
     </div>

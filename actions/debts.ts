@@ -1,8 +1,8 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { revalidateEmployee } from "@/lib/revalidate"
 
 async function requireAdmin() {
   const session = await getSession()
@@ -30,23 +30,23 @@ export async function createDebt(prevState: string | null, formData: FormData) {
     },
   })
 
-  revalidatePath("/deudas")
+  revalidateEmployee(userId)
   return null
 }
 
 export async function markDebtPaid(debtId: string) {
   await requireAdmin()
 
-  await db.debt.update({
+  const debt = await db.debt.update({
     where: { id: debtId },
     data: { paid: true, paidAt: new Date() },
   })
 
-  revalidatePath("/deudas")
+  revalidateEmployee(debt.userId)
 }
 
 export async function deleteDebt(debtId: string) {
   await requireAdmin()
-  await db.debt.delete({ where: { id: debtId } })
-  revalidatePath("/deudas")
+  const debt = await db.debt.delete({ where: { id: debtId } })
+  revalidateEmployee(debt.userId)
 }

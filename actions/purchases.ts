@@ -1,8 +1,8 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { revalidateEmployee } from "@/lib/revalidate"
 
 async function requireAdmin() {
   const session = await getSession()
@@ -34,12 +34,12 @@ export async function createPurchase(prevState: string | null, formData: FormDat
     },
   })
 
-  revalidatePath("/compras")
+  revalidateEmployee(userId)
   return null
 }
 
 export async function deletePurchase(purchaseId: string) {
   await requireAdmin()
-  await db.purchase.delete({ where: { id: purchaseId } })
-  revalidatePath("/compras")
+  const purchase = await db.purchase.delete({ where: { id: purchaseId } })
+  revalidateEmployee(purchase.userId)
 }

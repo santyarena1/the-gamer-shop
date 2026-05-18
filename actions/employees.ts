@@ -1,9 +1,9 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { revalidateEmployee } from "@/lib/revalidate"
 
 async function requireAdmin() {
   const session = await getSession()
@@ -20,6 +20,9 @@ export async function createEmployee(prevState: string | null, formData: FormDat
   const position = formData.get("position") as string
   const phone = formData.get("phone") as string
   const role = formData.get("role") as "ADMIN" | "EMPLOYEE"
+  const baseSalaryRaw = formData.get("baseSalary") as string
+  const ipcAdjusted = formData.getAll("ipcAdjusted").includes("true")
+  const baseSalary = baseSalaryRaw ? parseFloat(baseSalaryRaw) : null
 
   if (!name || !email || !password) return "Nombre, email y contraseña son obligatorios"
 
@@ -27,11 +30,20 @@ export async function createEmployee(prevState: string | null, formData: FormDat
   if (exists) return "Ya existe un usuario con ese email"
 
   const hashed = await bcrypt.hash(password, 12)
-  await db.user.create({
-    data: { name, email, password: hashed, position: position || null, phone: phone || null, role: role || "EMPLOYEE" },
+  const user = await db.user.create({
+    data: {
+      name,
+      email,
+      password: hashed,
+      position: position || null,
+      phone: phone || null,
+      role: role || "EMPLOYEE",
+      baseSalary: baseSalary && !isNaN(baseSalary) ? baseSalary : null,
+      ipcAdjusted,
+    },
   })
 
-  revalidatePath("/empleados")
+  revalidateEmployee(user.id)
   return null
 }
 
@@ -45,13 +57,25 @@ export async function updateEmployee(prevState: string | null, formData: FormDat
   const phone = formData.get("phone") as string
   const role = formData.get("role") as "ADMIN" | "EMPLOYEE"
   const active = formData.get("active") === "true"
+  const baseSalaryRaw = formData.get("baseSalary") as string
+  const ipcAdjusted = formData.getAll("ipcAdjusted").includes("true")
+  const baseSalary = baseSalaryRaw ? parseFloat(baseSalaryRaw) : null
 
   await db.user.update({
     where: { id },
-    data: { name, email, position: position || null, phone: phone || null, role, active },
+    data: {
+      name,
+      email,
+      position: position || null,
+      phone: phone || null,
+      role,
+      active,
+      baseSalary: baseSalary && !isNaN(baseSalary) ? baseSalary : null,
+      ipcAdjusted,
+    },
   })
 
-  revalidatePath("/empleados")
+  revalidateEmployee(id)
   return null
 }
 
@@ -66,6 +90,6 @@ export async function resetPassword(prevState: string | null, formData: FormData
   const hashed = await bcrypt.hash(password, 12)
   await db.user.update({ where: { id }, data: { password: hashed } })
 
-  revalidatePath("/empleados")
+  revalidateEmployee(id)
   return null
 }

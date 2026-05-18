@@ -5,6 +5,7 @@ import RegisterForm from "./RegisterForm"
 export default async function LoginPage() {
   const userCount = await db.user.count()
   const isFirstRun = userCount === 0
+  const canResetPassword = Boolean(process.env.PASSWORD_RESET_SECRET)
 
   return (
     <div className="w-full max-w-sm">
@@ -19,7 +20,7 @@ export default async function LoginPage() {
       </div>
 
       <div className="bg-[#141414] border border-white/10 rounded-2xl p-6">
-        {isFirstRun ? <RegisterForm /> : <LoginForm />}
+        {isFirstRun ? <RegisterForm /> : <LoginForm canResetPassword={canResetPassword} />}
       </div>
     </div>
   )

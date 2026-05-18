@@ -3,6 +3,9 @@
 import { useState, useActionState } from "react"
 import { createDebt, markDebtPaid, deleteDebt } from "@/actions/debts"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { isPastDue } from "@/lib/app-date-shared"
+import { useAppDate } from "@/hooks/useAppDate"
+import CorporateCardSection, { type CorporateCardData } from "@/components/debts/CorporateCardSection"
 
 type Debt = {
   id: string
@@ -17,11 +20,22 @@ type Debt = {
 
 type Employee = { id: string; name: string }
 
-export default function DebtsView({ debts, employees, isAdmin }: {
+export default function DebtsView({
+  debts,
+  employees,
+  isAdmin,
+  employeeId,
+  corporateCard,
+}: {
   debts: Debt[]
   employees: Employee[]
   isAdmin: boolean
+  employeeId?: string
+  corporateCard?: CorporateCardData | null
 }) {
+  const { date: today } = useAppDate()
+  const currentMonth = today.getMonth() + 1
+  const currentYear = today.getFullYear()
   const [showCreate, setShowCreate] = useState(false)
   const [filter, setFilter] = useState("pending")
 
@@ -60,17 +74,33 @@ export default function DebtsView({ debts, employees, isAdmin }: {
         )}
       </div>
 
+      {employeeId && (
+        <CorporateCardSection
+          card={corporateCard ?? null}
+          userId={employeeId}
+          isAdmin={isAdmin}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+        />
+      )}
+
+      {employeeId && filtered.length > 0 && (
+        <p className="text-xs text-white/40 pt-1">Otras deudas</p>
+      )}
+
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="text-center py-12 text-white/30">No hay deudas</div>
+          <div className="text-center py-12 text-white/30">
+            {employeeId && corporateCard ? "No hay otras deudas" : "No hay deudas"}
+          </div>
         ) : (
           filtered.map((d) => (
             <div key={d.id} className="bg-[#141414] border border-white/10 rounded-xl p-4 flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">{d.description}</p>
-                <p className="text-xs text-white/40">{d.user.name}</p>
+                {!employeeId && <p className="text-xs text-white/40">{d.user.name}</p>}
                 {d.dueDate && (
-                  <p className={`text-xs mt-0.5 ${!d.paid && new Date(d.dueDate) < new Date() ? "text-red-400" : "text-white/30"}`}>
+                  <p className={`text-xs mt-0.5 ${!d.paid && isPastDue(d.dueDate, today) ? "text-red-400" : "text-white/30"}`}>
                     Vence: {formatDate(d.dueDate)}
                   </p>
                 )}
@@ -112,13 +142,17 @@ export default function DebtsView({ debts, employees, isAdmin }: {
               <button onClick={() => setShowCreate(false)} className="text-white/40 hover:text-white text-xl">×</button>
             </div>
             <form action={createAction} className="space-y-3">
-              <div>
-                <label className="text-xs text-white/60 mb-1 block">Empleado *</label>
-                <select name="userId" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-                  <option value="">Seleccionar</option>
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
+              {employeeId ? (
+                <input type="hidden" name="userId" value={employeeId} />
+              ) : (
+                <div>
+                  <label className="text-xs text-white/60 mb-1 block">Empleado *</label>
+                  <select name="userId" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
+                    <option value="">Seleccionar</option>
+                    {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-white/60 mb-1 block">Descripción *</label>
                 <input name="description" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />

@@ -49,3 +49,31 @@ export async function registerFirstAdmin(prevState: string | null, formData: For
 
   redirect("/login")
 }
+
+export async function resetPassword(prevState: string | null, formData: FormData) {
+  const secret = process.env.PASSWORD_RESET_SECRET
+  if (!secret) return "El restablecimiento de contraseña no está habilitado"
+
+  const email = (formData.get("email") as string)?.trim().toLowerCase()
+  const password = formData.get("password") as string
+  const confirmPassword = formData.get("confirmPassword") as string
+  const resetSecret = formData.get("resetSecret") as string
+
+  if (!email || !password || !confirmPassword || !resetSecret) {
+    return "Completá todos los campos"
+  }
+
+  if (resetSecret !== secret) return "Código de restablecimiento incorrecto"
+
+  if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
+
+  if (password !== confirmPassword) return "Las contraseñas no coinciden"
+
+  const user = await db.user.findUnique({ where: { email } })
+  if (!user || !user.active) return "No existe un usuario activo con ese email"
+
+  const hashed = await bcrypt.hash(password, 12)
+  await db.user.update({ where: { id: user.id }, data: { password: hashed } })
+
+  return "ok"
+}

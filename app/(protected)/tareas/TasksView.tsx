@@ -3,6 +3,8 @@
 import { useState, useActionState } from "react"
 import { createTask, updateTaskStatus, deleteTask } from "@/actions/tasks"
 import { TASK_STATUS_LABELS, TASK_STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, formatDate } from "@/lib/utils"
+import { isPastDue } from "@/lib/app-date-shared"
+import { useAppDate } from "@/hooks/useAppDate"
 
 type Task = {
   id: string
@@ -18,11 +20,13 @@ type Task = {
 
 type Employee = { id: string; name: string }
 
-export default function TasksView({ tasks, employees, isAdmin }: {
+export default function TasksView({ tasks, employees, isAdmin, employeeId }: {
   tasks: Task[]
   employees: Employee[]
   isAdmin: boolean
+  employeeId?: string
 }) {
+  const { date: today } = useAppDate()
   const [showCreate, setShowCreate] = useState(false)
   const [filter, setFilter] = useState("ALL")
 
@@ -77,8 +81,13 @@ export default function TasksView({ tasks, employees, isAdmin }: {
                   <p className="font-medium text-sm">{task.title}</p>
                   {task.description && <p className="text-xs text-white/40 mt-1">{task.description}</p>}
                   <div className="flex items-center gap-3 mt-2 text-xs text-white/30">
-                    <span>→ {task.assignedTo.name}</span>
-                    {task.dueDate && <span>Vence: {formatDate(task.dueDate)}</span>}
+                    {!employeeId && <span>→ {task.assignedTo.name}</span>}
+                    {task.dueDate && (
+                      <span className={task.status !== "DONE" && task.status !== "CANCELLED" && isPastDue(task.dueDate, today) ? "text-red-400" : undefined}>
+                        Vence: {formatDate(task.dueDate)}
+                        {task.status !== "DONE" && task.status !== "CANCELLED" && isPastDue(task.dueDate, today) ? " · vencida" : ""}
+                      </span>
+                    )}
                     <span>Por: {task.createdBy.name}</span>
                   </div>
                 </div>
@@ -126,13 +135,17 @@ export default function TasksView({ tasks, employees, isAdmin }: {
                 <label className="text-xs text-white/60 mb-1 block">Descripción</label>
                 <textarea name="description" rows={2} className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500 resize-none" />
               </div>
-              <div>
-                <label className="text-xs text-white/60 mb-1 block">Asignar a *</label>
-                <select name="assignedToId" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-                  <option value="">Seleccionar empleado</option>
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
+              {employeeId ? (
+                <input type="hidden" name="assignedToId" value={employeeId} />
+              ) : (
+                <div>
+                  <label className="text-xs text-white/60 mb-1 block">Asignar a *</label>
+                  <select name="assignedToId" required className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
+                    <option value="">Seleccionar empleado</option>
+                    {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-white/60 mb-1 block">Prioridad</label>
