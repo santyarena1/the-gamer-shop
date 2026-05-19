@@ -29,8 +29,12 @@ model User {
   purchases     Purchase[]
   investments   Investment[]
   corporateCard CorporateCard?
-  quoteThreads  QuoteThread[]  @relation("QuoteThreadAuthor")
-  quoteMessages QuoteMessage[] @relation("QuoteMessageAuthor")
+  quoteThreads       QuoteThread[]       @relation("QuoteThreadAuthor")
+  quoteMessages      QuoteMessage[]      @relation("QuoteMessageAuthor")
+  quoteCatalogItems  QuoteCatalogItem[]
+  quoteDocuments     QuoteDocument[]
+  pcBuildTemplates   PcBuildTemplate[]
+  flyerGenerations   FlyerGeneration[]
 
   @@map("users")
 }
@@ -301,9 +305,10 @@ model QuoteThread {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author   User           @relation("QuoteThreadAuthor", fields: [authorId], references: [id])
-  authorId String
-  messages QuoteMessage[]
+  author    User            @relation("QuoteThreadAuthor", fields: [authorId], references: [id])
+  authorId  String
+  messages  QuoteMessage[]
+  documents QuoteDocument[]
 
   @@map("quote_threads")
 }
@@ -334,4 +339,152 @@ model QuoteQuickButton {
   active    Boolean @default(true)
 
   @@map("quote_quick_buttons")
+}
+
+enum PcComponentSlot {
+  CPU
+  MOTHER
+  RAM
+  GPU
+  STORAGE
+  PSU
+  CASE
+  COOLER
+  MONITOR
+  OTHER
+}
+
+enum QuoteLineSourceType {
+  ACUSTOCK
+  CUSTOM
+}
+
+enum QuoteDocumentStatus {
+  DRAFT
+  CONFIRMED
+  SENT
+  ARCHIVED
+}
+
+model QuoteCatalogItem {
+  id          String   @id @default(cuid())
+  name        String
+  sku         String?
+  category    String   @default("Otro")
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  @@map("quote_catalog_items")
+}
+
+model PcBuildTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  /// JSON: array of { slot, sourceType, sourceRef, name, unitPrice, qty }
+  slotsJson   String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  @@map("pc_build_templates")
+}
+
+model QuoteDocument {
+  id          String              @id @default(cuid())
+  title       String
+  clientName  String?
+  clientPhone String?
+  notes       String?
+  status      QuoteDocumentStatus @default(DRAFT)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+  thread   QuoteThread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  threadId String?
+  builds   QuoteBuild[]
+  flyers   FlyerGeneration[]
+
+  @@map("quote_documents")
+}
+
+model QuoteBuild {
+  id         String   @id @default(cuid())
+  label      String   @default("Configuración")
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  document   QuoteDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+  lineItems  QuoteLineItem[]
+
+  @@map("quote_builds")
+}
+
+model QuoteLineItem {
+  id         String              @id @default(cuid())
+  slot       PcComponentSlot
+  sourceType QuoteLineSourceType
+  sourceRef  String
+  name       String
+  unitPrice  Decimal             @db.Decimal(12, 2)
+  qty        Int                 @default(1)
+  sortOrder  Int                 @default(0)
+
+  build   QuoteBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  buildId String
+
+  @@map("quote_line_items")
+}
+
+model AppSettings {
+  id          String   @id @default("default")
+  shopName    String   @default("The Gamer Shop")
+  tagline     String   @default("Panel de Gestión")
+  accentColor String   @default("#22c55e")
+  logoUrl     String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+model FlyerGeneration {
+  id              String   @id @default(cuid())
+  templateId      String   @default("tgs_pc_gamer_1080_v1")
+  title           String
+  categoryLabel   String   @default("PC GAMER")
+  titleLine1      String
+  titleLine2      String
+  payloadJson     String   @db.Text
+  outputPath      String?
+  caseImagePath   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  author          User          @relation(fields: [authorId], references: [id])
+  authorId        String
+  quoteDocument   QuoteDocument? @relation(fields: [quoteDocumentId], references: [id], onDelete: SetNull)
+  quoteDocumentId String?
+
+  @@map("flyer_generations")
+}
+
+model IntegrationSettings {
+  id              String   @id
+  encryptedApiKey String?  @db.Text
+  defaultModel    String   @default("gpt-image-1")
+  updatedAt       DateTime @updatedAt
+
+  @@map("integration_settings")
 }

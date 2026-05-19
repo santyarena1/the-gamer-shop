@@ -1,0 +1,817 @@
+PROMPT PARA CURSOR - NUEVO MÓDULO DE GENERACIÓN MASIVA DE IMÁGENES DE PC GAMER
+
+Contexto general
+================
+
+Necesito crear un nuevo módulo dentro de mi sistema de gestión para generar imágenes publicitarias de PCs gamer en masa.
+
+La idea es que el sistema tome una plantilla visual fija, el logo fijo de The Gamer Shop, una imagen variable del gabinete/PC y los componentes variables de cada equipo. Con esa información debe generar automáticamente una imagen cuadrada 1080x1080 lista para publicar.
+
+El diseño de referencia es una pieza gráfica de The Gamer Shop con estética gamer premium: fondo negro, rojo intenso, blanco, tipografía grande, imagen de gabinete RGB a la derecha, componentes a la izquierda y una barra inferior con beneficios.
+
+IMPORTANTE:
+No quiero depender solamente de un prompt libre para una IA, porque eso puede generar errores de texto, cambios de diseño, deformaciones del gabinete o inconsistencias entre imágenes.
+La recomendación principal es crear una plantilla programática y usar la IA solo como apoyo para mejorar la imagen del gabinete, integrar el fondo o generar variantes visuales controladas.
+
+
+Objetivo del nuevo módulo
+=========================
+
+Crear un módulo llamado, por ejemplo:
+
+- Generador de Imágenes
+- Generador de Flyers
+- Imágenes PC Gamer
+- Plantillas de Publicación
+
+El módulo debe permitir:
+
+1. Cargar o seleccionar una PC/presupuesto/producto del sistema.
+2. Tomar automáticamente los componentes principales.
+3. Permitir editar manualmente los textos antes de generar.
+4. Subir o seleccionar la imagen del gabinete/PC.
+5. Generar una imagen final 1080x1080.
+6. Descargar la imagen en PNG.
+7. Guardar un historial de imágenes generadas.
+8. Permitir regenerar una imagen usando los mismos datos.
+9. Tener configuración de API para OpenAI desde una sección de configuración del sistema.
+
+
+Recomendación técnica principal
+===============================
+
+La mejor solución para producción masiva es NO generar toda la imagen con IA desde cero.
+
+El flujo recomendado es:
+
+Sistema de gestión
+    ↓
+JSON con datos de la PC
+    ↓
+Template fijo HTML/SVG/Canvas
+    ↓
+Render automático a PNG
+    ↓
+Guardado en servidor / carpeta local / base de datos / storage
+    ↓
+Descarga o publicación
+
+La IA debe usarse solo para tareas auxiliares:
+
+1. Mejorar o limpiar la imagen del gabinete.
+2. Eliminar fondo de la imagen del gabinete si hace falta.
+3. Integrar mejor visualmente el gabinete con el fondo.
+4. Generar fondos alternativos si se desea.
+5. Nunca debe modificar los textos técnicos finales.
+
+Los textos, posiciones, logo, iconos y estructura deben ser programáticos para evitar errores como:
+
+- RYZEN escrito mal.
+- GEFORCE escrito mal.
+- BRONCE cambiado por BRONZE.
+- GARANTÍA sin tilde si se quiere mantener con tilde.
+- Datos técnicos inventados.
+- Componentes alterados.
+- Gabinete deformado.
+- Logo deformado o mal ubicado.
+
+
+Formato de salida
+=================
+
+El módulo debe generar imágenes en:
+
+- Tamaño: 1080x1080 px.
+- Formato: PNG.
+- Calidad alta.
+- Fondo oscuro.
+- Sin precio, salvo que en el futuro se agregue una opción para mostrar precio.
+- Preparado para Instagram, WhatsApp, web y publicaciones comerciales.
+
+
+Estructura visual de la plantilla
+=================================
+
+Nombre recomendado de plantilla:
+
+tgs_pc_gamer_1080_v1
+
+Canvas:
+
+- Ancho: 1080 px.
+- Alto: 1080 px.
+- Fondo: negro profundo.
+- Glow rojo detrás de la PC, ubicado hacia el centro/derecha.
+- Viñeta suave en los bordes.
+- Estética gamer premium, limpia y comercial.
+
+Colores principales:
+
+- Fondo: #030303 o #050505.
+- Rojo principal: #ff0000.
+- Rojo oscuro de glow: #7a0000 o #b00000.
+- Blanco: #ffffff.
+- Gris divisor: #333333.
+- Gris oscuro para líneas: #222222.
+
+Distribución:
+
+1. Logo arriba a la izquierda.
+2. Título grande en columna izquierda.
+3. Lista de componentes debajo del título.
+4. Imagen del gabinete/PC grande del lado derecho.
+5. Barra de beneficios en la parte inferior.
+
+Medidas aproximadas:
+
+Canvas:
+- 1080x1080 px.
+
+Márgenes:
+- Margen seguro: 50 px.
+
+Logo:
+- x: 50
+- y: 40
+- ancho: 220 px
+- alto: automático
+- No deformar.
+- No recortar.
+- Usar logo fijo desde assets del sistema.
+
+Columna izquierda:
+- x: 50
+- y inicial: 185
+- ancho aproximado: 400 px
+
+Zona derecha para PC:
+- x: 455
+- y: 190
+- ancho: 585 px
+- alto: 680 px
+- fit: contain
+- No deformar.
+- No estirar.
+- Mantener proporciones reales.
+
+Barra inferior:
+- x: 50
+- y: 920
+- ancho: 980 px
+- alto: 110 px
+
+
+Textos principales
+==================
+
+Categoría:
+
+Texto:
+PC GAMER
+
+Estilo:
+- Color rojo.
+- Tamaño aproximado: 30 px.
+- Tipografía condensada.
+- Mayúsculas.
+- Letter spacing leve.
+
+Ubicación:
+- x: 50
+- y: 195
+
+Título línea 1:
+
+Ejemplo:
+RYZEN 5
+
+Estilo:
+- Color blanco.
+- Tamaño aproximado: 88 px.
+- Tipografía gruesa y condensada.
+- Similar a Anton, Bebas Neue, Oswald Condensed o Impact.
+- Mayúsculas.
+- Stroke/sombra negra leve.
+
+Ubicación:
+- x: 50
+- y: 245
+
+Título línea 2:
+
+Ejemplo:
+8400F
+
+Estilo:
+- Color rojo.
+- Tamaño aproximado: 130 px.
+- Tipografía gruesa y condensada.
+- Mayúsculas.
+- Stroke/sombra negra o rojo oscuro leve.
+
+Ubicación:
+- x: 50
+- y: 345
+
+Línea divisoria debajo del título:
+
+- x: 50
+- y: 450
+- ancho: 390 px
+- alto: 2 px
+- color: #c00000
+
+
+Lista de componentes
+====================
+
+La lista debe ser vertical.
+
+Ubicación:
+- x: 50
+- y: 470
+
+Cada item debe tener:
+
+1. Caja de icono a la izquierda.
+2. Icono lineal rojo.
+3. Etiqueta del componente en rojo.
+4. Valor del componente en blanco.
+5. Separador horizontal tenue.
+
+Medidas aproximadas:
+
+Item:
+- Alto: 88 px.
+
+Caja de icono:
+- Ancho: 86 px.
+- Alto: 76 px.
+- Borde: #333333.
+- Border radius: 8 px.
+- Fondo: transparente o negro muy oscuro.
+- Icono: rojo #ff0000.
+- Stroke del icono: 2 px.
+
+Texto del item:
+
+Etiqueta:
+- Fuente: Oswald / Roboto Condensed / Bebas Neue.
+- Tamaño: 22 px.
+- Color: #ff0000.
+- Peso: bold.
+- Mayúsculas.
+
+Valor:
+- Fuente: Roboto Condensed / Oswald.
+- Tamaño: 25 px.
+- Color: #ffffff.
+- Mayúsculas.
+- Line-height: 30 px.
+
+Separador:
+- Color: #222222.
+- Alto: 1 px.
+
+Componentes esperados:
+
+1. Procesador
+2. Motherboard
+3. Memoria RAM + Disco
+4. Placa de video
+5. Fuente de poder
+
+Pero el sistema debería permitir editar o agregar/quitar componentes si en el futuro se necesitan otras variantes.
+
+
+Ejemplo de datos para componentes
+=================================
+
+{
+  "components": [
+    {
+      "icon": "cpu",
+      "label": "PROCESADOR",
+      "value": "AMD (AM5) RYZEN 5 8400F"
+    },
+    {
+      "icon": "motherboard",
+      "label": "MOTHERBOARD",
+      "value": "MOTHERBOARD A620M"
+    },
+    {
+      "icon": "ram_storage",
+      "label": "MEMORIA RAM + DISCO",
+      "value": "RAM 16GB DDR5\nSSD M.2 1TB NVME"
+    },
+    {
+      "icon": "gpu",
+      "label": "PLACA DE VIDEO",
+      "value": "NVIDIA GEFORCE RTX 5060 TI 8GB"
+    },
+    {
+      "icon": "psu",
+      "label": "FUENTE DE PODER",
+      "value": "700W 80 PLUS BRONCE"
+    }
+  ]
+}
+
+
+Imagen del gabinete / PC
+========================
+
+La imagen de la PC debe ser variable.
+
+Requisitos:
+
+- El usuario debe poder subir una imagen.
+- El sistema debe mostrar preview.
+- Debe colocarse grande del lado derecho.
+- Debe mantenerse nítida.
+- No debe deformarse.
+- No debe estirarse.
+- Debe mantener proporción real.
+- Debe integrarse con sombra roja suave detrás.
+- Idealmente debe soportar PNG con fondo transparente.
+- Si viene con fondo, opcionalmente se puede mandar a OpenAI para limpiar o integrar.
+
+Parámetros visuales:
+
+- x: 455
+- y: 190
+- width: 585
+- height: 680
+- object-fit: contain
+
+Sombra recomendada:
+
+- Color: #ff0000.
+- Opacidad: 0.35.
+- Blur: 80 px.
+- OffsetX: 0.
+- OffsetY: 30.
+
+
+Barra inferior de beneficios
+============================
+
+Debe ir fija abajo.
+
+Ubicación:
+- x: 50
+- y: 920
+- width: 980
+- height: 110
+
+Arriba de la barra:
+- Línea horizontal gris #333333.
+- Alto 1 px.
+
+Beneficios fijos:
+
+1. COMPONENTES / DE CALIDAD
+2. RENDIMIENTO / CONFIABLE
+3. GARANTÍA / OFICIAL
+4. ENVÍOS A / TODO EL PAÍS
+
+Cada beneficio debe tener:
+
+- Icono blanco.
+- Primera línea en blanco.
+- Segunda línea en rojo.
+- Separadores verticales sutiles entre beneficios.
+
+Iconos sugeridos:
+
+- Componentes de calidad: shield.
+- Rendimiento confiable: star/badge.
+- Garantía oficial: headset.
+- Envíos a todo el país: truck.
+
+Estilos:
+
+- Icon color: #ffffff.
+- Texto línea 1: #ffffff.
+- Texto línea 2: #ff0000.
+- Fuente: Roboto Condensed / Oswald.
+- Tamaño línea 1: 21 px.
+- Tamaño línea 2: 19 px.
+- Separador vertical: #333333.
+
+
+JSON base que debe usar el módulo
+=================================
+
+Este es el formato recomendado que el frontend/backend debe manejar:
+
+{
+  "template": "pc_gamer_square_v1",
+  "output": {
+    "width": 1080,
+    "height": 1080,
+    "format": "png"
+  },
+  "brand": {
+    "logo": "LOGO_THE_GAMER_SHOP",
+    "primaryColor": "#ff0000",
+    "secondaryColor": "#ffffff",
+    "backgroundColor": "#050505",
+    "accentColor": "#b00000"
+  },
+  "product": {
+    "categoryLabel": "PC GAMER",
+    "mainTitleLine1": "RYZEN 5",
+    "mainTitleLine2": "8400F",
+    "pcImage": "URL_O_BASE64_IMAGEN_GABINETE"
+  },
+  "components": [
+    {
+      "icon": "cpu",
+      "label": "PROCESADOR",
+      "value": "AMD (AM5) RYZEN 5 8400F"
+    },
+    {
+      "icon": "motherboard",
+      "label": "MOTHERBOARD",
+      "value": "MOTHERBOARD A620M"
+    },
+    {
+      "icon": "ram_storage",
+      "label": "MEMORIA RAM + DISCO",
+      "value": "RAM 16GB DDR5\nSSD M.2 1TB NVME"
+    },
+    {
+      "icon": "gpu",
+      "label": "PLACA DE VIDEO",
+      "value": "NVIDIA GEFORCE RTX 5060 TI 8GB"
+    },
+    {
+      "icon": "psu",
+      "label": "FUENTE DE PODER",
+      "value": "700W 80 PLUS BRONCE"
+    }
+  ],
+  "benefits": [
+    {
+      "icon": "shield",
+      "line1": "COMPONENTES",
+      "line2": "DE CALIDAD"
+    },
+    {
+      "icon": "star",
+      "line1": "RENDIMIENTO",
+      "line2": "CONFIABLE"
+    },
+    {
+      "icon": "headset",
+      "line1": "GARANTÍA",
+      "line2": "OFICIAL"
+    },
+    {
+      "icon": "truck",
+      "line1": "ENVÍOS A",
+      "line2": "TODO EL PAÍS"
+    }
+  ]
+}
+
+
+Configuración de API OpenAI
+===========================
+
+Agregar dentro del sistema una sección nueva en Configuración llamada:
+
+Integración API
+
+Dentro de esa sección agregar un bloque específico:
+
+OpenAI
+
+Campos necesarios:
+
+1. API Key / Token de OpenAI
+   - Campo tipo password.
+   - Permitir mostrar/ocultar.
+   - No mostrar completo luego de guardarlo.
+   - Mostrarlo enmascarado, por ejemplo: sk-****abcd.
+
+2. Modelo por defecto
+   - Selector.
+   - Ejemplos:
+     - gpt-image-1
+     - otro modelo disponible según implementación futura.
+
+3. Estado de conexión
+   - Botón: Probar conexión.
+   - Debe hacer una llamada simple para verificar que el token funcione.
+   - Mostrar estado:
+     - Conectado correctamente.
+     - Token inválido.
+     - Error de conexión.
+     - Sin configurar.
+
+4. Guardar configuración
+   - Botón para guardar cambios.
+
+5. Eliminar token
+   - Botón para borrar la API Key guardada.
+
+Seguridad:
+
+- No guardar el token en el frontend.
+- Guardarlo del lado backend.
+- Idealmente guardarlo cifrado o como variable segura.
+- Nunca imprimir el token completo en consola.
+- Nunca devolver el token completo al frontend.
+- El frontend solo debe saber si existe token configurado y una versión enmascarada.
+- No exponer el token en respuestas de API.
+
+Endpoints sugeridos:
+
+GET /api/settings/integrations/openai
+Devuelve:
+{
+  "configured": true,
+  "maskedKey": "sk-****abcd",
+  "defaultModel": "gpt-image-1",
+  "status": "connected"
+}
+
+POST /api/settings/integrations/openai
+Recibe:
+{
+  "apiKey": "sk-xxxxxxxx",
+  "defaultModel": "gpt-image-1"
+}
+
+POST /api/settings/integrations/openai/test
+Prueba conexión con OpenAI y devuelve:
+{
+  "success": true,
+  "message": "Conectado correctamente"
+}
+
+DELETE /api/settings/integrations/openai
+Borra la configuración guardada.
+
+
+Funciones del módulo de imágenes
+================================
+
+Crear una pantalla principal con:
+
+1. Selector de plantilla
+   - Por ahora solo: tgs_pc_gamer_1080_v1.
+
+2. Datos principales:
+   - Categoría: PC GAMER.
+   - Título línea 1: ejemplo RYZEN 5.
+   - Título línea 2: ejemplo 8400F.
+
+3. Imagen de gabinete:
+   - Subir imagen.
+   - Preview.
+   - Botón opcional: Mejorar imagen con IA.
+   - Botón opcional: Quitar fondo con IA.
+   - Botón opcional: Integrar mejor con fondo.
+
+4. Componentes:
+   - Tabla editable.
+   - Columnas:
+     - Icono
+     - Etiqueta
+     - Valor
+     - Orden
+     - Acciones
+   - Permitir editar textos.
+   - Permitir reordenar.
+   - Permitir eliminar.
+   - Permitir agregar componente.
+
+5. Beneficios inferiores:
+   - Por defecto fijos.
+   - Permitir editarlos desde configuración avanzada, pero no hace falta en primera versión.
+
+6. Vista previa:
+   - Mostrar preview 1080x1080 escalada.
+   - Botón generar.
+   - Botón descargar PNG.
+   - Botón guardar en historial.
+
+7. Historial:
+   - Fecha.
+   - Nombre/título de la PC.
+   - Imagen generada.
+   - Botón descargar.
+   - Botón duplicar.
+   - Botón regenerar.
+   - Botón eliminar.
+
+
+Backend recomendado
+===================
+
+Para render programático:
+
+Opción 1:
+- HTML + CSS + Puppeteer/Playwright.
+- Generar una página HTML con la plantilla.
+- Sacar screenshot 1080x1080.
+- Guardar como PNG.
+
+Opción 2:
+- SVG dinámico.
+- Insertar textos, logo, iconos e imagen.
+- Convertir SVG a PNG con Sharp.
+
+Opción 3:
+- Canvas server-side.
+- Usar node-canvas o similar.
+- Dibujar todo programáticamente.
+
+Recomendación:
+Usar HTML/CSS + Playwright o Puppeteer porque permite ajustar diseño más fácil y mantener una plantilla visual parecida a un flyer.
+
+
+Flujo recomendado de generación
+===============================
+
+1. Usuario entra al módulo Generador de Imágenes.
+2. Carga datos de una PC o los escribe manualmente.
+3. Sube imagen del gabinete.
+4. El sistema arma un JSON.
+5. El frontend muestra preview.
+6. Al tocar Generar:
+   - Backend toma JSON.
+   - Renderiza plantilla HTML/SVG.
+   - Exporta PNG 1080x1080.
+   - Guarda el archivo.
+   - Devuelve URL del archivo generado.
+7. Usuario puede descargar o guardar en historial.
+
+
+Uso de OpenAI dentro del módulo
+===============================
+
+OpenAI debe ser opcional.
+
+El sistema debe funcionar aunque no haya API Key configurada, usando render programático.
+
+Si hay API Key configurada, se pueden habilitar acciones como:
+
+1. Mejorar imagen de gabinete.
+2. Quitar fondo.
+3. Crear fondo gamer alternativo.
+4. Integrar la PC al fondo.
+5. Generar variantes visuales.
+
+Pero no debe usarse IA para escribir los textos finales sobre la imagen, salvo que sea estrictamente necesario.
+
+Regla importante:
+Los textos finales deben venir siempre del JSON y renderizarse desde el sistema para evitar errores de IA.
+
+
+Prompt maestro para generación asistida por IA
+==============================================
+
+Este prompt puede usarse si se decide usar OpenAI para una versión generada por IA o para mejorar fondos:
+
+Crear una imagen publicitaria cuadrada 1080x1080 para una PC gamer de The Gamer Shop.
+
+Usar una composición profesional, oscura, gamer, premium, con estética negra y roja. Fondo negro profundo con leve resplandor radial rojo detrás de la PC, sin sobrecargar la imagen.
+
+El logo de The Gamer Shop debe ir fijo arriba a la izquierda, ocupando aproximadamente 220 px de ancho.
+
+La imagen debe dividirse visualmente en dos zonas:
+- Columna izquierda: información del producto y componentes.
+- Zona derecha: imagen grande del gabinete/PC, ocupando la mayor parte del lado derecho.
+
+Texto principal en la columna izquierda:
+Arriba colocar "PC GAMER" en rojo, pequeño.
+Debajo colocar el título principal en dos líneas:
+"{{mainTitleLine1}}" en blanco, muy grande.
+"{{mainTitleLine2}}" en rojo, todavía más grande.
+Usar tipografía condensada, gruesa, gamer, similar a Anton, Bebas Neue o Impact.
+
+Debajo del título colocar una línea divisoria roja fina.
+
+Luego mostrar una lista vertical de componentes. Cada componente debe tener:
+- Un recuadro oscuro con borde gris tenue.
+- Un icono lineal rojo relacionado al componente.
+- Una etiqueta roja en mayúsculas.
+- El valor del componente en blanco.
+- Separadores horizontales sutiles entre componentes.
+
+Componentes:
+{{components}}
+
+A la derecha colocar la imagen de la PC/gabinete proporcionada como contexto. Debe estar recortada sin fondo o integrada naturalmente, en tamaño grande, con brillo RGB visible y sombra roja suave detrás. No deformar la PC. Mantener proporciones reales.
+
+En la parte inferior colocar una barra de beneficios con cuatro bloques distribuidos horizontalmente:
+1. Componentes de calidad
+2. Rendimiento confiable
+3. Garantía oficial
+4. Envíos a todo el país
+
+Cada bloque debe tener icono blanco, primera línea en blanco y segunda línea destacada en rojo. Separadores verticales sutiles entre bloques.
+
+No agregar precio. No agregar textos inventados. No cambiar el logo. No cambiar los componentes. No deformar el gabinete. No usar fondos claros. No usar estilos infantiles. Mantener diseño limpio, premium, gamer y comercial.
+
+
+Prompt corto para producción
+============================
+
+Renderizar una pieza gráfica 1080x1080 usando la plantilla tgs_pc_gamer_1080_v1.
+
+Respetar exactamente la estructura visual definida:
+logo arriba izquierda, título grande en columna izquierda, imagen de PC grande a la derecha, lista de componentes debajo del título y barra inferior de beneficios.
+
+Usar únicamente los textos recibidos en el JSON. No inventar, no corregir, no traducir ni resumir datos.
+
+Mantener estética gamer premium negra/roja/blanca, alto contraste, fondo oscuro con glow rojo, tipografía condensada y fuerte.
+
+No deformar la imagen de la PC. No modificar el logo. No agregar precio.
+
+
+Restricciones obligatorias
+==========================
+
+- No inventar componentes.
+- No corregir nombres técnicos sin permiso.
+- No cambiar el logo.
+- No deformar la imagen del gabinete.
+- No agregar precio.
+- No agregar marcas externas salvo que estén en los datos.
+- No usar emojis.
+- No generar texto fuera del JSON.
+- No renderizar texto con IA si se puede renderizar programáticamente.
+- No guardar API keys en frontend.
+- No exponer tokens en consola ni respuestas.
+- No romper módulos existentes del sistema.
+- Mantener el módulo separado y escalable.
+
+
+Entregables esperados de Cursor
+===============================
+
+Cursor debe crear:
+
+1. Nueva sección/módulo en el sistema:
+   - Generador de Imágenes o Generador de Flyers.
+
+2. Pantalla de creación:
+   - Formulario de datos.
+   - Carga de imagen.
+   - Tabla editable de componentes.
+   - Preview.
+   - Botón generar.
+   - Botón descargar.
+   - Historial básico.
+
+3. Template visual:
+   - tgs_pc_gamer_1080_v1.
+   - Basado en HTML/CSS, SVG o Canvas.
+   - Exportación a PNG 1080x1080.
+
+4. Backend:
+   - Endpoint para generar imagen.
+   - Endpoint para guardar historial.
+   - Endpoint para obtener historial.
+   - Endpoint para eliminar imagen generada.
+
+5. Configuración:
+   - Nueva sección Configuración > Integración API.
+   - Bloque OpenAI.
+   - Guardado seguro de token.
+   - Probar conexión.
+   - Eliminar token.
+
+6. Assets:
+   - Logo fijo de The Gamer Shop.
+   - Iconos SVG para CPU, motherboard, RAM/disco, GPU, fuente, shield, star, headset y truck.
+   - Carpeta ordenada para plantillas y assets.
+
+7. Código limpio:
+   - Separar lógica de render, configuración, historial y frontend.
+   - No mezclar la lógica de IA con la lógica de render.
+   - Mantener preparado para agregar nuevas plantillas en el futuro.
+
+
+Conclusión técnica
+==================
+
+La solución correcta es una plantilla programática con variables.
+
+La IA puede ayudar, pero no debe controlar toda la composición final si se busca producción masiva y consistencia.
+
+El módulo debe estar preparado para generar muchas imágenes similares cambiando solo:
+
+- Título.
+- Procesador.
+- Modelo.
+- Componentes.
+- Imagen del gabinete.
+- Eventualmente beneficios o precio si se agrega en el futuro.
+
+La plantilla debe mantener siempre la identidad visual de The Gamer Shop: negro, rojo, blanco, estética gamer profesional, logo fijo, información clara y composición comercial.

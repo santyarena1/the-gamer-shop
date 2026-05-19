@@ -1,7 +1,11 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
+import { IPC_ALERT_DISMISS_COOKIE, isIpcAlertDismissed } from "@/lib/ipc-alert"
+import { syncPayrollForCurrentPeriod } from "@/lib/payroll"
 import { getSession } from "@/lib/session"
 import Header from "@/components/Header"
+import PayrollPeriodAlerts from "@/components/PayrollPeriodAlerts"
 import DashboardAdmin, { type EmployeeSummary } from "./DashboardAdmin"
 
 export default async function DashboardPage() {
@@ -11,6 +15,16 @@ export default async function DashboardPage() {
   if (session.role !== "ADMIN") {
     redirect(`/empleados/${session.userId}`)
   }
+
+  const payroll = await syncPayrollForCurrentPeriod()
+  const cookieStore = await cookies()
+  const showIpcAlert =
+    payroll.showIpcPrompt &&
+    !isIpcAlertDismissed(
+      cookieStore.get(IPC_ALERT_DISMISS_COOKIE)?.value,
+      payroll.month,
+      payroll.year,
+    )
 
   const users = await db.user.findMany({
     where: { active: true },
@@ -44,6 +58,7 @@ export default async function DashboardPage() {
     <div className="flex flex-col flex-1 overflow-auto">
       <Header title="Dashboard" />
       <main className="flex-1 p-6 space-y-6">
+        {showIpcAlert && <PayrollPeriodAlerts payroll={payroll} />}
         <p className="text-white/60 text-sm">Bienvenido, {session.name}</p>
         <DashboardAdmin employees={employees} />
       </main>

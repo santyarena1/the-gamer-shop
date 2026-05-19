@@ -162,7 +162,7 @@ export default function SalariesView({
         <p className="text-sm text-yellow-400/90 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2">
           Sin liquidación de {MONTHS[payroll.month - 1]} {payroll.year} para este empleado.
           {!payroll.hasIpc
-            ? " Cargá el IPC del mes en la barra superior."
+            ? " Cargá el IPC del mes en Configuración o desde el dashboard."
             : " Necesita sueldo base, ajuste IPC activado, o una liquidación del mes anterior (ej. Mayo)."}
         </p>
       )}

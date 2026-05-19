@@ -14,6 +14,7 @@ export default function PayrollPeriodAlerts({ payroll }: Props) {
       month={payroll.month}
       year={payroll.year}
       existingPercentage={payroll.ipcPercentage}
+      showDismiss
     />
   )
 }

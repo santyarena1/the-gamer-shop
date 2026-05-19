@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation"
-import { getSession } from "@/lib/session"
+import { getCachedSession } from "@/lib/server-cache"
 
 export async function requireSession() {
-  const session = await getSession()
+  const session = await getCachedSession()
   if (!session) redirect("/login")
   return session
 }

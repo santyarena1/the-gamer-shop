@@ -2,7 +2,7 @@ import { PrismaClient } from "@/app/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 
 /** Bump when cambia prisma/schema.prisma para invalidar el cliente en caché (dev). */
-const PRISMA_CLIENT_VERSION = "2026-quotes-forum"
+const PRISMA_CLIENT_VERSION = "2026-flyer-generator"
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient

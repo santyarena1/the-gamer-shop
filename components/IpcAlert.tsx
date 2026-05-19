@@ -1,18 +1,35 @@
 "use client"
 
-import { useActionState } from "react"
-import { saveMonthlyIpc } from "@/actions/ipc"
+import { useRouter } from "next/navigation"
+import { useActionState, useTransition } from "react"
+import Link from "next/link"
+import { dismissIpcAlert, saveMonthlyIpc } from "@/actions/ipc"
 import { MONTHS } from "@/lib/utils"
 
 type Props = {
   month: number
   year: number
   existingPercentage?: number | null
+  showDismiss?: boolean
 }
 
-export default function IpcAlert({ month, year, existingPercentage }: Props) {
+export default function IpcAlert({
+  month,
+  year,
+  existingPercentage,
+  showDismiss = false,
+}: Props) {
+  const router = useRouter()
   const [error, action, pending] = useActionState(saveMonthlyIpc, null)
+  const [dismissing, startDismiss] = useTransition()
   const needsIpc = existingPercentage == null
+
+  function handleDismiss() {
+    startDismiss(async () => {
+      await dismissIpcAlert(month, year)
+      router.refresh()
+    })
+  }
 
   return (
     <div
@@ -23,13 +40,26 @@ export default function IpcAlert({ month, year, existingPercentage }: Props) {
       }`}
     >
       <div className="flex items-start gap-3">
-        <span className="text-2xl">{needsIpc ? "⚠️" : "✓"}</span>
-        <div className="flex-1">
-          <h3 className="font-semibold text-sm">
-            {needsIpc
-              ? `IPC de ${MONTHS[month - 1]} ${year} — valor único para todos`
-              : `IPC de ${MONTHS[month - 1]} ${year} cargado`}
-          </h3>
+        <span className="text-2xl shrink-0">{needsIpc ? "⚠️" : "✓"}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-sm">
+              {needsIpc
+                ? `IPC de ${MONTHS[month - 1]} ${year} — valor único para todos`
+                : `IPC de ${MONTHS[month - 1]} ${year} cargado`}
+            </h3>
+            {showDismiss && needsIpc && (
+              <button
+                type="button"
+                onClick={handleDismiss}
+                disabled={dismissing}
+                className="shrink-0 text-white/40 hover:text-white/70 text-xs px-2 py-1 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
+                aria-label="Cerrar aviso"
+              >
+                {dismissing ? "…" : "✕"}
+              </button>
+            )}
+          </div>
           <p className="text-xs text-white/50 mt-1">
             {needsIpc
               ? "Cada mes se carga un solo porcentaje de IPC. Aplica a todos los empleados con ajuste por inflación y genera las liquidaciones automáticamente."
@@ -60,6 +90,15 @@ export default function IpcAlert({ month, year, existingPercentage }: Props) {
                 {pending ? "Guardando..." : "Guardar IPC del mes"}
               </button>
             </form>
+          )}
+          {needsIpc && showDismiss && (
+            <p className="mt-2 text-xs text-white/40">
+              También podés cargarlo en{" "}
+              <Link href="/configuracion" className="text-green-400 hover:underline">
+                Configuración
+              </Link>
+              .
+            </p>
           )}
 
           {!needsIpc && (
