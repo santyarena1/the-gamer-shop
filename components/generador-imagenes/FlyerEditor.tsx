@@ -7,8 +7,8 @@ import {
   removeFlyerCaseBackground,
   saveFlyerDraft,
   uploadFlyerCaseImage,
+  uploadFlyerStyleReference,
 } from "@/actions/flyer"
-import type { BackgroundRemovalMethod } from "@/lib/flyer/process-case-image"
 import ReferenceImageSearch from "@/components/generador-imagenes/ReferenceImageSearch"
 import {
   DEFAULT_BENEFITS,
@@ -17,6 +17,7 @@ import {
   type FlyerComponentIcon,
   type FlyerPayload,
 } from "@/lib/flyer/types"
+import { slimFlyerPayload } from "@/lib/flyer/slim-payload"
 
 const ICON_OPTIONS: FlyerComponentIcon[] = [
   "cpu",
@@ -34,9 +35,12 @@ type Props = {
   initialPayload: FlyerPayload
   outputPath?: string | null
   caseImagePath?: string | null
+  styleReferencePath?: string | null
+  styleReferencePreview?: string | null
   quoteDocumentId?: string | null
   serperConfigured?: boolean
   openAiConfigured?: boolean
+  openAiStatusMessage?: string
 }
 
 export default function FlyerEditor({
@@ -44,19 +48,29 @@ export default function FlyerEditor({
   initialPayload,
   outputPath: initialOutput,
   caseImagePath,
+  styleReferencePath: initialStylePath,
+  styleReferencePreview: initialStylePreview,
   quoteDocumentId,
   serperConfigured = false,
   openAiConfigured = false,
+  openAiStatusMessage,
 }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [removeBackground, setRemoveBackground] = useState(true)
-  const [bgStatus, setBgStatus] = useState<string | null>(null)
+  const [removeBackgroundOnPick, setRemoveBackgroundOnPick] = useState(false)
+  const [useOpenAiOnPick, setUseOpenAiOnPick] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [flyerId, setFlyerId] = useState(initialFlyerId)
   const [payload, setPayload] = useState<FlyerPayload>(initialPayload)
   const [outputPath, setOutputPath] = useState(initialOutput ?? null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialOutput ?? null)
+  const [lastRenderMethod, setLastRenderMethod] = useState<"openai" | "template" | null>(
+    null,
+  )
+  const [styleRefPath, setStyleRefPath] = useState(initialStylePath ?? null)
+  const [styleRefPreview, setStyleRefPreview] = useState<string | null>(
+    initialStylePreview ?? null,
+  )
 
   function updateProduct<K extends keyof FlyerPayload["product"]>(
     key: K,
@@ -76,10 +90,7 @@ export default function FlyerEditor({
   function addComponent() {
     setPayload((p) => ({
       ...p,
-      components: [
-        ...p.components,
-        { icon: "other", label: "COMPONENTE", value: "" },
-      ],
+      components: [...p.components, { icon: "other", label: "COMPONENTE", value: "" }],
     }))
   }
 
@@ -90,55 +101,82 @@ export default function FlyerEditor({
     }))
   }
 
-  function bgMethodLabel(method: BackgroundRemovalMethod): string {
-    if (method === "openai") return "Fondo quitado con OpenAI"
-    if (method === "sharp") return "Fondo blanco recortado (modo local)"
-    return ""
-  }
+  const hasProductImage = Boolean(payload.product.pcImageBase64 || caseImagePath)
 
   async function ensureFlyerId(): Promise<string> {
     if (flyerId) return flyerId
-    const id = await saveFlyerDraft(null, { payload, quoteDocumentId })
+    const id = await saveFlyerDraft(null, {
+      payload: slimFlyerPayload(payload),
+      quoteDocumentId,
+    })
     setFlyerId(id)
     router.replace(`/generador-imagenes/${id}`)
     return id
   }
 
-  function handleCaseUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleStyleReferenceUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setError(null)
-    setBgStatus(null)
+    startTransition(async () => {
+      try {
+        const id = await ensureFlyerId()
+        const fd = new FormData()
+        fd.set("styleReference", file)
+        const result = await uploadFlyerStyleReference(id, fd)
+        if (result) {
+          setStyleRefPath(result.path)
+          const reader = new FileReader()
+          reader.onload = () => setStyleRefPreview(reader.result as string)
+          reader.readAsDataURL(file)
+          setPayload((p) => ({
+            ...p,
+            styleReference: { path: result.path },
+          }))
+        }
+        router.refresh()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al subir referencia de diseño")
+      }
+    })
+  }
+
+  function handleProductUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
     startTransition(async () => {
       try {
         const id = await ensureFlyerId()
         const fd = new FormData()
         fd.set("caseImage", file)
-        const result = await uploadFlyerCaseImage(id, fd, removeBackground)
+        const result = await uploadFlyerCaseImage(
+          id,
+          fd,
+          removeBackgroundOnPick,
+          useOpenAiOnPick,
+        )
         if (result) {
           updateProduct("pcImageBase64", result.dataUri)
-          setBgStatus(bgMethodLabel(result.method))
         }
         router.refresh()
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al subir")
+        setError(err instanceof Error ? err.message : "Error al subir imagen del producto")
       }
     })
   }
 
-  function handleRemoveBackground() {
-    if (!payload.product.pcImageBase64) {
-      setError("Cargá una imagen primero")
+  function handleRemoveProductBackground() {
+    if (!payload.product.pcImageBase64 && !caseImagePath) {
+      setError("Elegí primero la imagen del producto (derecha)")
       return
     }
     setError(null)
-    setBgStatus(null)
     startTransition(async () => {
       try {
         const id = await ensureFlyerId()
-        const { dataUri, method } = await removeFlyerCaseBackground(id)
+        const { dataUri } = await removeFlyerCaseBackground(id, useOpenAiOnPick)
         updateProduct("pcImageBase64", dataUri)
-        setBgStatus(bgMethodLabel(method))
         router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo quitar el fondo")
@@ -147,14 +185,22 @@ export default function FlyerEditor({
   }
 
   function handleGenerate() {
+    if (!hasProductImage) {
+      setError("Elegí la imagen del gabinete/producto que va a la derecha del flyer")
+      return
+    }
     setError(null)
     startTransition(async () => {
       try {
         const id = await ensureFlyerId()
-        await saveFlyerDraft(id, { payload, quoteDocumentId })
-        const path = await generateFlyerPng(id)
-        setOutputPath(path)
-        setPreviewUrl(`${path}?t=${Date.now()}`)
+        await saveFlyerDraft(id, {
+          payload: slimFlyerPayload(payload),
+          quoteDocumentId,
+        })
+        const { outputPath, renderMethod } = await generateFlyerPng(id)
+        setOutputPath(outputPath)
+        setLastRenderMethod(renderMethod)
+        setPreviewUrl(`${outputPath}?t=${Date.now()}`)
         router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al generar")
@@ -166,7 +212,13 @@ export default function FlyerEditor({
     setError(null)
     startTransition(async () => {
       try {
-        const id = await saveFlyerDraft(flyerId ?? null, { payload, quoteDocumentId })
+        const id = await saveFlyerDraft(flyerId ?? null, {
+          payload: slimFlyerPayload({
+            ...payload,
+            styleReference: styleRefPath ? { path: styleRefPath } : undefined,
+          }),
+          quoteDocumentId,
+        })
         setFlyerId(id)
         router.refresh()
       } catch (err) {
@@ -176,10 +228,151 @@ export default function FlyerEditor({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+    <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
       <div className="space-y-6">
+        <p className="text-sm text-white/50 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3">
+          Al pulsar <strong className="text-white">Generar</strong>, el PNG sale de la plantilla SVG{" "}
+          <strong className="text-white">{FLYER_TEMPLATE_ID}</strong> (diseño TGS fijo): textos exactos,
+          logo desde Configuración → Apariencia, y la foto del producto a la derecha. OpenAI solo se usa
+          si activás quitar fondo en la imagen del producto.
+        </p>
+
+        {/* 1. Referencia de diseño */}
+        <section className="rounded-xl border border-white/15 bg-[#141414] p-5 space-y-4">
+          <div>
+            <h3 className="font-medium text-lg">1. Referencia de diseño</h3>
+            <p className="text-xs text-white/45 mt-1">
+              Opcional: flyer de ejemplo para comparar mientras armás el contenido (no se incrusta en el
+              PNG).
+            </p>
+          </div>
+
+          <label className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-white/15 bg-[#0a0a0a] p-6 cursor-pointer hover:border-white/30 min-h-[140px] justify-center">
+            {styleRefPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={styleRefPreview}
+                alt="Referencia de diseño"
+                className="max-h-40 max-w-full object-contain rounded-lg"
+              />
+            ) : (
+              <span className="text-white/35 text-sm text-center">
+                Subí un flyer de ejemplo
+                <br />
+                <span className="text-xs">JPG o PNG · máx. 5 MB</span>
+              </span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleStyleReferenceUpload}
+              disabled={pending}
+            />
+            <span className="text-xs px-3 py-1.5 rounded-lg bg-white/10">
+              {pending ? "Subiendo…" : "Elegir imagen de referencia"}
+            </span>
+          </label>
+          {styleRefPath && (
+            <p className="text-xs text-white/35 truncate">Guardada: {styleRefPath}</p>
+          )}
+        </section>
+
+        {/* 2. Imagen del producto (derecha) */}
+        <section className="rounded-xl border-2 border-dashed border-brand/50 bg-[#141414] p-5 space-y-4">
+          <div>
+            <h3 className="font-medium text-lg">2. Imagen del producto (va a la derecha)</h3>
+            <p className="text-xs text-white/45 mt-1">
+              Gabinete o producto que se verá en el flyer. Buscá con Serper, quitá el fondo blanco y/o
+              subí un PNG transparente.
+            </p>
+          </div>
+
+          {payload.product.pcImageBase64 && (
+            <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-4 flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={payload.product.pcImageBase64}
+                alt="Producto en el flyer"
+                className="max-h-52 max-w-full object-contain"
+              />
+            </div>
+          )}
+
+          {serperConfigured ? (
+            <ReferenceImageSearch
+              payload={payload}
+              flyerId={flyerId}
+              serperConfigured={serperConfigured}
+              removeBackground={removeBackgroundOnPick}
+              useOpenAi={useOpenAiOnPick}
+              ensureFlyerId={ensureFlyerId}
+              onImageApplied={(dataUri) => updateProduct("pcImageBase64", dataUri)}
+              onError={setError}
+            />
+          ) : (
+            <p className="text-xs text-amber-200/80 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+              Configurá Serper en Configuración → Integración API para buscar fotos del producto.
+            </p>
+          )}
+
+          <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={removeBackgroundOnPick}
+              onChange={(e) => {
+                const on = e.target.checked
+                setRemoveBackgroundOnPick(on)
+                if (!on) setUseOpenAiOnPick(false)
+              }}
+              className="rounded border-white/20"
+            />
+            Quitar fondo claro al elegir imagen (solo bordes, conserva el producto)
+          </label>
+          {removeBackgroundOnPick && openAiConfigured && (
+            <label className="flex items-center gap-2 text-xs text-amber-200/70 cursor-pointer ml-5">
+              <input
+                type="checkbox"
+                checked={useOpenAiOnPick}
+                onChange={(e) => setUseOpenAiOnPick(e.target.checked)}
+                className="rounded border-amber-500/30"
+              />
+              Usar OpenAI (experimental: puede alterar o recortar el gabinete)
+            </label>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleRemoveProductBackground}
+              disabled={pending || !hasProductImage}
+              className="text-xs px-3 py-2 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-40"
+            >
+              Quitar fondo de la imagen actual
+            </button>
+          </div>
+
+          <label className="block">
+            <span className="text-xs text-white/50 mb-2 block">O subir archivo del producto</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleProductUpload}
+              disabled={pending}
+              className="block w-full text-sm text-white/60 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-brand file:text-black file:font-medium"
+            />
+          </label>
+          {caseImagePath && (
+            <p className="text-xs text-white/35 truncate">Producto guardado: {caseImagePath}</p>
+          )}
+        </section>
+
+        {/* 3. Textos */}
         <section className="rounded-xl border border-white/10 bg-[#141414] p-5 space-y-4">
-          <h3 className="font-medium">Datos principales</h3>
+          <div>
+            <h3 className="font-medium text-lg">3. Textos del flyer</h3>
+            <p className="text-xs text-white/45 mt-1">Completá manualmente.</p>
+          </div>
           <p className="text-xs text-white/40">Plantilla: {FLYER_TEMPLATE_ID}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -187,6 +380,7 @@ export default function FlyerEditor({
               <input
                 value={payload.product.categoryLabel}
                 onChange={(e) => updateProduct("categoryLabel", e.target.value)}
+                placeholder="PC GAMER"
                 className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus-brand"
               />
             </div>
@@ -195,6 +389,7 @@ export default function FlyerEditor({
               <input
                 value={payload.product.mainTitleLine1}
                 onChange={(e) => updateProduct("mainTitleLine1", e.target.value.toUpperCase())}
+                placeholder="RYZEN 5"
                 className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus-brand"
               />
             </div>
@@ -203,96 +398,33 @@ export default function FlyerEditor({
               <input
                 value={payload.product.mainTitleLine2}
                 onChange={(e) => updateProduct("mainTitleLine2", e.target.value.toUpperCase())}
+                placeholder="8400F"
                 className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus-brand"
               />
             </div>
           </div>
         </section>
 
+        {/* 4. Componentes */}
         <section className="rounded-xl border border-white/10 bg-[#141414] p-5 space-y-3">
-          <h3 className="font-medium">Imagen del gabinete / producto</h3>
-          {caseImagePath && (
-            <p className="text-xs text-white/40 truncate">Actual: {caseImagePath}</p>
-          )}
-          {payload.product.pcImageBase64 && (
-            <div className="w-32 h-32 rounded-lg border border-white/10 overflow-hidden bg-[#0a0a0a]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={payload.product.pcImageBase64}
-                alt="Referencia actual"
-                className="w-full h-full object-contain"
-              />
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-medium text-lg">4. Componentes</h3>
+              <p className="text-xs text-white/45">Una fila por pieza.</p>
             </div>
-          )}
-          <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={removeBackground}
-              onChange={(e) => setRemoveBackground(e.target.checked)}
-              className="rounded border-white/20"
-            />
-            Quitar fondo al cargar
-            {openAiConfigured ? (
-              <span className="text-white/35">(OpenAI + respaldo local)</span>
-            ) : (
-              <span className="text-white/35">(recorte de fondo blanco local)</span>
-            )}
-          </label>
-
-          <ReferenceImageSearch
-            payload={payload}
-            flyerId={flyerId}
-            serperConfigured={serperConfigured}
-            removeBackground={removeBackground}
-            ensureFlyerId={ensureFlyerId}
-            onImageApplied={(dataUri, method) => {
-              updateProduct("pcImageBase64", dataUri)
-              setBgStatus(bgMethodLabel(method))
-            }}
-            onError={setError}
-          />
-
-          {payload.product.pcImageBase64 && (
-            <button
-              type="button"
-              onClick={handleRemoveBackground}
-              disabled={pending}
-              className="text-xs px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50"
-            >
-              {pending ? "Procesando…" : "Quitar fondo de la imagen actual"}
-            </button>
-          )}
-
-          {bgStatus && <p className="text-xs text-brand">{bgStatus}</p>}
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleCaseUpload}
-            className="block w-full text-sm text-white/60 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-brand file:text-black file:font-medium"
-          />
-          <p className="text-xs text-white/30">
-            Las fotos de catálogo suelen tener fondo blanco: activá &quot;Quitar fondo&quot; para
-            PNG transparente. Con OpenAI en Configuración el resultado es más limpio. Máx. 5 MB.
-          </p>
-        </section>
-
-        <section className="rounded-xl border border-white/10 bg-[#141414] p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Componentes</h3>
             <button
               type="button"
               onClick={addComponent}
-              className="text-xs px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10"
+              className="text-xs px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 shrink-0"
             >
-              + Agregar
+              + Fila
             </button>
           </div>
           <div className="space-y-3">
             {payload.components.map((comp, i) => (
               <div
                 key={i}
-                className="grid gap-2 sm:grid-cols-[100px_1fr_1fr_auto] items-start border border-white/5 rounded-lg p-3"
+                className="grid gap-2 sm:grid-cols-[90px_1fr_1fr_auto] items-start border border-white/5 rounded-lg p-3"
               >
                 <select
                   value={comp.icon}
@@ -310,13 +442,13 @@ export default function FlyerEditor({
                 <input
                   value={comp.label}
                   onChange={(e) => updateComponent(i, { label: e.target.value })}
-                  placeholder="Etiqueta"
+                  placeholder="PROCESADOR"
                   className="bg-[#0f0f0f] border border-white/10 rounded-lg px-2 py-2 text-xs focus-brand"
                 />
                 <textarea
                   value={comp.value}
                   onChange={(e) => updateComponent(i, { value: e.target.value })}
-                  placeholder="Valor"
+                  placeholder="Modelo"
                   rows={2}
                   className="bg-[#0f0f0f] border border-white/10 rounded-lg px-2 py-2 text-xs focus-brand resize-none"
                 />
@@ -324,6 +456,7 @@ export default function FlyerEditor({
                   type="button"
                   onClick={() => removeComponent(i)}
                   className="text-xs text-red-300/80 hover:text-red-300 px-2"
+                  aria-label="Quitar fila"
                 >
                   ✕
                 </button>
@@ -333,6 +466,18 @@ export default function FlyerEditor({
         </section>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
+
+        {!openAiConfigured && (
+          <p className="text-xs text-white/40 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            OpenAI no configurado: podés generar igual con la plantilla SVG. Para quitar fondo del
+            producto con IA, {openAiStatusMessage ?? "configurá la API Key en Integración API."}
+          </p>
+        )}
+        {lastRenderMethod === "template" && (
+          <p className="text-xs text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-3 py-2">
+            Última generación: <strong className="text-white">plantilla SVG TGS</strong>
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -349,7 +494,7 @@ export default function FlyerEditor({
             disabled={pending}
             className="btn-primary px-4 py-2 rounded-lg text-sm disabled:opacity-50"
           >
-            {pending ? "Generando…" : "Generar PNG 1080×1080"}
+            {pending ? "Generando PNG…" : "Generar PNG 1080×1080"}
           </button>
           {outputPath && (
             <a
@@ -363,24 +508,31 @@ export default function FlyerEditor({
         </div>
       </div>
 
-      <aside className="lg:sticky lg:top-6 h-fit">
-        <p className="text-xs text-white/40 mb-2">Vista previa</p>
-        <div className="aspect-square w-full max-w-[400px] mx-auto rounded-xl border border-white/10 bg-[#050505] overflow-hidden">
-          {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={previewUrl}
-              alt="Preview flyer"
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-white/30 text-sm p-4 text-center">
-              Generá la imagen para ver el resultado
+      <aside className="lg:sticky lg:top-6 h-fit space-y-4">
+        {styleRefPreview && (
+          <div>
+            <p className="text-xs text-white/40 mb-2">Referencia de diseño</p>
+            <div className="rounded-xl border border-white/10 bg-[#050505] overflow-hidden aspect-square max-h-[200px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={styleRefPreview} alt="" className="w-full h-full object-contain p-2" />
             </div>
-          )}
+          </div>
+        )}
+        <div>
+          <p className="text-xs text-white/40 mb-2">PNG generado</p>
+          <div className="aspect-square w-full rounded-xl border border-white/10 bg-[#050505] overflow-hidden">
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewUrl} alt="Flyer" className="w-full h-full object-contain" />
+            ) : (
+              <div className="flex items-center justify-center h-full text-white/30 text-sm p-6 text-center">
+                Elegí producto + textos y generá
+              </div>
+            )}
+          </div>
         </div>
-        <p className="text-[11px] text-white/30 mt-2 text-center">
-          Beneficios fijos: {DEFAULT_BENEFITS.map((b) => b.line1).join(" · ")}
+        <p className="text-[11px] text-white/30 text-center">
+          Beneficios: {DEFAULT_BENEFITS.map((b) => b.line1).join(" · ")}
         </p>
       </aside>
     </div>

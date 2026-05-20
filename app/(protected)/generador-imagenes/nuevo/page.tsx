@@ -5,7 +5,8 @@ import Header from "@/components/Header"
 import FlyerEditor from "@/components/generador-imagenes/FlyerEditor"
 import { buildFlyerPayloadFromLineItems } from "@/lib/flyer/map-from-quote"
 import { getSerperPublicSettings } from "@/lib/serper-integration"
-import { getOpenAiPublicSettings } from "@/lib/openai-integration"
+import { getBranding } from "@/lib/branding"
+import { getOpenAiFlyerDiagnostics } from "@/lib/openai-integration"
 
 type Props = {
   searchParams: Promise<{ quoteId?: string }>
@@ -14,12 +15,15 @@ type Props = {
 export default async function GeneradorImagenesNuevoPage({ searchParams }: Props) {
   await requireSession()
   const { quoteId } = await searchParams
-  const [serper, openAi] = await Promise.all([
+  const [serper, branding, openAiDiag] = await Promise.all([
     getSerperPublicSettings(),
-    getOpenAiPublicSettings(),
+    getBranding(),
+    getOpenAiFlyerDiagnostics(),
   ])
 
-  let initialPayload = buildFlyerPayloadFromLineItems([])
+  let initialPayload = buildFlyerPayloadFromLineItems([], {
+    logoPath: branding.logoUrl,
+  })
   let quoteDocumentId: string | null = null
 
   if (quoteId) {
@@ -42,7 +46,9 @@ export default async function GeneradorImagenesNuevoPage({ searchParams }: Props
         unitPrice: Number(li.unitPrice),
         qty: li.qty,
       }))
-      initialPayload = buildFlyerPayloadFromLineItems(items)
+      initialPayload = buildFlyerPayloadFromLineItems(items, {
+        logoPath: branding.logoUrl,
+      })
       quoteDocumentId = doc.id
     }
   }
@@ -58,7 +64,8 @@ export default async function GeneradorImagenesNuevoPage({ searchParams }: Props
           initialPayload={initialPayload}
           quoteDocumentId={quoteDocumentId}
           serperConfigured={serper.configured}
-          openAiConfigured={openAi.configured}
+          openAiConfigured={openAiDiag.ready}
+          openAiStatusMessage={openAiDiag.message}
         />
       </main>
     </div>

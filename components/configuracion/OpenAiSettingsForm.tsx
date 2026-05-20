@@ -24,8 +24,9 @@ export default function OpenAiSettingsForm({ initial }: Props) {
       <div>
         <h3 className="font-medium">OpenAI</h3>
         <p className="text-xs text-white/50 mt-1">
-          Quita el fondo blanco de fotos de gabinete/producto en el Generador de imágenes (modelo{" "}
-          <code className="text-white/40">gpt-image-1</code>). Si no hay key, se usa recorte local.
+          Genera los flyers del módulo <strong className="text-white/70">Generador de imágenes</strong>{" "}
+          con <code className="text-white/40">gpt-image-1</code> (textos + producto + referencia de
+          diseño). También puede usarse para quitar fondo del producto (opcional).
         </p>
       </div>
 

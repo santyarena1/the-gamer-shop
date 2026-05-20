@@ -6,7 +6,15 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
+import { getBranding } from "@/lib/branding"
 import { renderFlyerPng } from "@/lib/flyer/render-png"
+
+export type FlyerRenderMethod = "openai" | "template"
+
+export type GenerateFlyerPngResult = {
+  outputPath: string
+  renderMethod: FlyerRenderMethod
+}
 import { fileToDataUri } from "@/lib/flyer/load-image"
 import {
   buildFlyerPayloadFromLineItems,
@@ -27,16 +35,22 @@ import {
   processCaseImageBuffer,
   type BackgroundRemovalMethod,
 } from "@/lib/flyer/process-case-image"
+import { slimFlyerPayload } from "@/lib/flyer/slim-payload"
 
 const FLYER_DIR = join(process.cwd(), "public", "uploads", "flyers")
 const CASE_DIR = join(FLYER_DIR, "cases")
+const STYLE_REF_DIR = join(FLYER_DIR, "style-ref")
 
 async function persistCaseImage(
   flyerId: string,
   rawBuffer: Buffer,
   removeBackground: boolean,
+  useOpenAi = false,
 ): Promise<{ caseImagePath: string; dataUri: string; method: BackgroundRemovalMethod }> {
-  const { buffer, method } = await processCaseImageBuffer(rawBuffer, { removeBackground })
+  const { buffer, method } = await processCaseImageBuffer(rawBuffer, {
+    removeBackground,
+    useOpenAi,
+  })
   await mkdir(CASE_DIR, { recursive: true })
   const rel = `/uploads/flyers/cases/${flyerId}.png`
   await writeFile(join(process.cwd(), "public", rel.replace(/^\//, "")), buffer)
@@ -46,13 +60,13 @@ async function persistCaseImage(
   if (!row) throw new Error("Flyer no encontrado")
 
   const payload = JSON.parse(row.payloadJson) as FlyerPayload
-  payload.product.pcImageBase64 = dataUri
+  payload.product.pcImageBase64 = null
 
   await db.flyerGeneration.update({
     where: { id: flyerId },
     data: {
       caseImagePath: rel,
-      payloadJson: JSON.stringify(payload),
+      payloadJson: JSON.stringify(slimFlyerPayload(payload)),
     },
   })
 
@@ -122,7 +136,7 @@ export async function saveFlyerDraft(
 ): Promise<string> {
   const session = await requireUser()
   const title = flyerDisplayTitle(data.payload) || "Flyer PC"
-  const json = JSON.stringify(data.payload)
+  const json = JSON.stringify(slimFlyerPayload(data.payload))
 
   if (flyerId) {
     await db.flyerGeneration.update({
@@ -155,10 +169,42 @@ export async function saveFlyerDraft(
   return record.id
 }
 
+export async function uploadFlyerStyleReference(
+  flyerId: string,
+  formData: FormData,
+): Promise<{ path: string } | null> {
+  await requireUser()
+  const file = formData.get("styleReference")
+  if (!file || !(file instanceof File) || file.size === 0) return null
+  if (!file.type.startsWith("image/")) throw new Error("Archivo inválido")
+  if (file.size > 5 * 1024 * 1024) throw new Error("Máximo 5 MB")
+
+  const ext =
+    file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
+  await mkdir(STYLE_REF_DIR, { recursive: true })
+  const rel = `/uploads/flyers/style-ref/${flyerId}.${ext}`
+  await writeFile(join(process.cwd(), "public", rel.replace(/^\//, "")), Buffer.from(await file.arrayBuffer()))
+
+  const row = await db.flyerGeneration.findUnique({ where: { id: flyerId } })
+  if (!row) throw new Error("Flyer no encontrado")
+
+  const payload = JSON.parse(row.payloadJson) as FlyerPayload
+  payload.styleReference = { path: rel }
+
+  await db.flyerGeneration.update({
+    where: { id: flyerId },
+    data: { payloadJson: JSON.stringify(slimFlyerPayload(payload)) },
+  })
+
+  revalidateFlyers()
+  return { path: rel }
+}
+
 export async function uploadFlyerCaseImage(
   flyerId: string,
   formData: FormData,
-  removeBackground = true,
+  removeBackground = false,
+  useOpenAi = false,
 ): Promise<{
   path: string
   dataUri: string
@@ -175,11 +221,14 @@ export async function uploadFlyerCaseImage(
     flyerId,
     buffer,
     removeBackground,
+    useOpenAi,
   )
   return { path: caseImagePath, dataUri, method }
 }
 
-export async function generateFlyerPng(flyerId: string): Promise<string> {
+export async function generateFlyerPng(
+  flyerId: string,
+): Promise<GenerateFlyerPngResult> {
   await requireUser()
 
   if (!db.flyerGeneration) {
@@ -197,7 +246,13 @@ export async function generateFlyerPng(flyerId: string): Promise<string> {
     payload.product.pcImageBase64 = await fileToDataUri(row.caseImagePath)
   }
 
+  const branding = await getBranding()
+  if (!payload.brand.logoPath && branding.logoUrl) {
+    payload.brand.logoPath = branding.logoUrl
+  }
+
   const png = await renderFlyerPng(payload)
+  const renderMethod: FlyerRenderMethod = "template"
   await mkdir(FLYER_DIR, { recursive: true })
   const outputPath = `/uploads/flyers/${flyerId}.png`
   await writeFile(join(process.cwd(), "public", outputPath.replace(/^\//, "")), png)
@@ -208,7 +263,7 @@ export async function generateFlyerPng(flyerId: string): Promise<string> {
   })
 
   revalidateFlyers()
-  return outputPath
+  return { outputPath, renderMethod }
 }
 
 export async function deleteFlyerAction(formData: FormData) {
@@ -248,7 +303,8 @@ export async function getSuggestedReferenceQuery(
 export async function applyFlyerReferenceImage(
   flyerId: string,
   imageUrl: string,
-  removeBackground = true,
+  removeBackground = false,
+  useOpenAi = false,
 ): Promise<{
   caseImagePath: string
   dataUri: string
@@ -257,11 +313,12 @@ export async function applyFlyerReferenceImage(
   await requireUser()
 
   const { buffer } = await downloadImageFromUrl(imageUrl)
-  return persistCaseImage(flyerId, buffer, removeBackground)
+  return persistCaseImage(flyerId, buffer, removeBackground, useOpenAi)
 }
 
 export async function removeFlyerCaseBackground(
   flyerId: string,
+  useOpenAi = false,
 ): Promise<{ dataUri: string; method: BackgroundRemovalMethod }> {
   await requireUser()
 
@@ -287,7 +344,7 @@ export async function removeFlyerCaseBackground(
     throw new Error("No hay imagen cargada para procesar")
   }
 
-  const { dataUri, method } = await persistCaseImage(flyerId, buffer, true)
+  const { dataUri, method } = await persistCaseImage(flyerId, buffer, true, useOpenAi)
   return { dataUri, method }
 }
 

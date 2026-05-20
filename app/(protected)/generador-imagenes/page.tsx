@@ -43,7 +43,7 @@ export default async function GeneradorImagenesPage() {
       <main className="flex-1 p-6 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-white/50">
-            Flyers 1080×1080 para publicar PCs. Render programático (sin IA en textos).
+            Subí una imagen de referencia, completá los textos y generá el flyer 1080×1080.
           </p>
           <Link
             href="/generador-imagenes/nuevo"

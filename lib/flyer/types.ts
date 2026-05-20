@@ -32,10 +32,15 @@ export type FlyerPayload = {
     backgroundColor: string
     accentColor: string
   }
+  /** Flyer de ejemplo para guiar el estilo (no va en el PNG final). */
+  styleReference?: {
+    path?: string | null
+  }
   product: {
     categoryLabel: string
     mainTitleLine1: string
     mainTitleLine2: string
+    /** Gabinete/producto a la derecha del flyer (preview en cliente; en disco: caseImagePath). */
     pcImageBase64?: string | null
   }
   components: FlyerComponent[]
@@ -49,4 +54,4 @@ export const DEFAULT_BENEFITS: FlyerBenefit[] = [
   { icon: "truck", line1: "ENVÍOS A", line2: "TODO EL PAÍS" },
 ]
 
-export const FLYER_TEMPLATE_ID = "tgs_pc_gamer_1080_v1"
+export const FLYER_TEMPLATE_ID = "tgs_pc_gamer_1080_v2"

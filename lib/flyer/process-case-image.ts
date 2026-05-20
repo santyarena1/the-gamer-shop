@@ -7,6 +7,12 @@ import { removeWhiteBackgroundSharp } from "@/lib/flyer/remove-background-sharp"
 
 export type BackgroundRemovalMethod = "openai" | "sharp" | "none"
 
+export type ProcessCaseImageOptions = {
+  removeBackground?: boolean
+  /** OpenAI puede alterar el producto; solo si el usuario lo pide explícitamente. */
+  useOpenAi?: boolean
+}
+
 export type ProcessCaseImageResult = {
   buffer: Buffer
   mime: "image/png"
@@ -15,16 +21,14 @@ export type ProcessCaseImageResult = {
 
 export async function processCaseImageBuffer(
   input: Buffer,
-  opts?: { removeBackground?: boolean },
+  opts?: ProcessCaseImageOptions,
 ): Promise<ProcessCaseImageResult> {
   if (!opts?.removeBackground) {
     const buffer = await sharp(input).png().toBuffer()
     return { buffer, mime: "image/png", method: "none" }
   }
 
-  const hasOpenAi = !!(await getOpenAiApiKey())
-
-  if (hasOpenAi) {
+  if (opts.useOpenAi && (await getOpenAiApiKey())) {
     try {
       const buffer = await removeBackgroundWithOpenAi(input)
       return { buffer, mime: "image/png", method: "openai" }
@@ -33,6 +37,9 @@ export async function processCaseImageBuffer(
     }
   }
 
-  const buffer = await removeWhiteBackgroundSharp(input)
+  const buffer = await removeWhiteBackgroundSharp(input, {
+    tolerance: 32,
+    feather: 16,
+  })
   return { buffer, mime: "image/png", method: "sharp" }
 }

@@ -1,4 +1,4 @@
-/** Iconos SVG inline (stroke rojo #ff0000) para la plantilla. */
+/** Iconos SVG inline para la plantilla TGS. */
 export function flyerIconPath(name: string): string {
   const icons: Record<string, string> = {
     cpu: "M8 8h16v16H8z M12 12h8v8h-8z M14 4v4 M18 4v4 M14 28v4 M18 28v4 M4 14h4 M4 18h4 M28 14h4 M28 18h4",
@@ -13,8 +13,7 @@ export function flyerIconPath(name: string): string {
     other: "M16 8l8 8-8 8-8-8z",
     shield: "M16 4l10 4v8c0 6-10 10-10 10S6 22 6 16V8z",
     star: "M16 6l3.5 7 7.5 1-5.5 5 1.5 8-7-4-7 4 1.5-8-5.5-5 7.5-1z",
-    headset:
-      "M8 18v-2a8 8 0 0116 0v2 M8 18h-2v4h4v-4 M24 18h2v4h-4v-4",
+    headset: "M8 18v-2a8 8 0 0116 0v2 M8 18h-2v4h4v-4 M24 18h2v4h-4v-4",
     truck: "M4 16h16v-6H4z M20 10h6l2 4v6h-4 M6 20a2 2 0 104 0 2 2 0 00-4 0 M22 20a2 2 0 104 0 2 2 0 00-4 0",
   }
   return icons[name] ?? icons.other
@@ -26,11 +25,28 @@ export function renderIconSvg(
   y: number,
   size: number,
   color: string,
-  strokeWidth = 2,
+  strokeWidth = 2.2,
 ): string {
   const scale = size / 32
   const path = flyerIconPath(name)
   return `<g transform="translate(${x},${y}) scale(${scale})">
     <path d="${path}" fill="none" stroke="${color}" stroke-width="${strokeWidth / scale}" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>`
+}
+
+/** Caja de icono estilo flyer TGS (borde rojo). */
+export function renderIconBoxSvg(
+  name: string,
+  x: number,
+  y: number,
+  boxSize: number,
+  iconColor: string,
+  borderColor: string,
+): string {
+  const iconPad = boxSize * 0.22
+  const iconSize = boxSize - iconPad * 2
+  return `<g transform="translate(${x}, ${y})">
+    <rect x="0" y="0" width="${boxSize}" height="${boxSize}" rx="10" fill="#0a0a0a" stroke="${borderColor}" stroke-width="2.5"/>
+    ${renderIconSvg(name, iconPad, iconPad, iconSize, iconColor, 2.4)}
   </g>`
 }

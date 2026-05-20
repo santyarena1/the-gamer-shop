@@ -44,15 +44,73 @@ export async function getOpenAiPublicSettings(): Promise<OpenAiPublicSettings> {
 }
 
 export async function getOpenAiApiKey(): Promise<string | null> {
-  const env = process.env.OPENAI_API_KEY?.trim()
-  if (env) return env
+  const diag = await getOpenAiFlyerDiagnostics()
+  return diag.key
+}
 
-  const row = await db.integrationSettings.findUnique({ where: { id: OPENAI_ID } })
-  if (!row?.encryptedApiKey) return null
+export type OpenAiFlyerDiagnostics = {
+  ready: boolean
+  source: "env" | "database" | null
+  message: string
+  key: string | null
+}
+
+/** Estado real de la API Key para generación de flyers (env o BD cifrada). */
+export async function getOpenAiFlyerDiagnostics(): Promise<OpenAiFlyerDiagnostics> {
+  const env = process.env.OPENAI_API_KEY?.trim()
+  if (env) {
+    return {
+      ready: true,
+      source: "env",
+      message: "API Key cargada desde .env",
+      key: env,
+    }
+  }
+
   try {
-    return decryptSecret(row.encryptedApiKey)
+    const row = await db.integrationSettings.findUnique({ where: { id: OPENAI_ID } })
+    if (!row?.encryptedApiKey) {
+      return {
+        ready: false,
+        source: null,
+        message:
+          "Sin API Key de OpenAI. Completá OPENAI_API_KEY en .env o guardala en Configuración → Integración API.",
+        key: null,
+      }
+    }
+    try {
+      const key = decryptSecret(row.encryptedApiKey).trim()
+      if (!key) {
+        return {
+          ready: false,
+          source: null,
+          message: "La API Key guardada en configuración está vacía. Volvé a guardarla.",
+          key: null,
+        }
+      }
+      return {
+        ready: true,
+        source: "database",
+        message: "API Key cargada desde Configuración → Integración API",
+        key,
+      }
+    } catch {
+      return {
+        ready: false,
+        source: null,
+        message:
+          "No se pudo leer la API Key guardada (cifrado). Volvé a guardarla en Configuración → Integración API.",
+        key: null,
+      }
+    }
   } catch {
-    return null
+    return {
+      ready: false,
+      source: null,
+      message:
+        "No se pudo acceder a la configuración de OpenAI. Ejecutá las migraciones de Prisma (integration_settings).",
+      key: null,
+    }
   }
 }
 

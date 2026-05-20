@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1080" height="1080"
+     viewBox="0 0 1080 1080">
+
+  <defs>
+    <radialGradient id="glow" cx="88%" cy="6%" r="78%"
+                    gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#7E0000" stop-opacity="0.95"/>
+      <stop offset="22%"  stop-color="#5A0000" stop-opacity="0.70"/>
+      <stop offset="55%"  stop-color="#2E0000" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glow2" cx="100%" cy="55%" r="55%"
+                    gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#5A0000" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1080" height="1080" fill="#000000"/>
+  <rect width="1080" height="1080" fill="url(#glow)"/>
+  <rect width="1080" height="1080" fill="url(#glow2)"/>
+
+  <image href="{{LOGO_URL}}"
+         x="30" y="30" width="210" height="90"
+         preserveAspectRatio="xMinYMid meet"/>
+
+  <text x="44" y="178"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="600"
+        fill="#E94444" letter-spacing="2.8">{{CATEGORIA}}</text>
+
+  <text x="40" y="288"
+        font-family="'Arial Black', Arial, Helvetica, sans-serif"
+        font-size="100" font-weight="900"
+        fill="#FFFFFF" letter-spacing="-1">{{TITULO_LINEA1}}</text>
+
+  <text x="40" y="408"
+        font-family="'Arial Black', Arial, Helvetica, sans-serif"
+        font-size="120" font-weight="900"
+        fill="#E60000" letter-spacing="-2">{{TITULO_LINEA2}}</text>
+
+  <rect x="40" y="430" width="460" height="3" fill="#E60000"/>
+
+  <rect x="42" y="452" width="56" height="56" rx="7"
+        fill="none" stroke="#E60000" stroke-width="1.8"/>
+  <g transform="translate(70,480)"
+     stroke="#E60000" stroke-width="1.5" fill="none"
+     stroke-linecap="round">
+    <rect x="-13" y="-13" width="26" height="26" rx="2"/>
+    <rect x="-7"  y="-7"  width="14" height="14" rx="1"/>
+    <line x1="-7" y1="-13" x2="-7" y2="-18"/>
+    <line x1="0"  y1="-13" x2="0"  y2="-18"/>
+    <line x1="7"  y1="-13" x2="7"  y2="-18"/>
+    <line x1="-7" y1="13"  x2="-7" y2="18"/>
+    <line x1="0"  y1="13"  x2="0"  y2="18"/>
+    <line x1="7"  y1="13"  x2="7"  y2="18"/>
+    <line x1="-13" y1="-7" x2="-18" y2="-7"/>
+    <line x1="-13" y1="0"  x2="-18" y2="0"/>
+    <line x1="-13" y1="7"  x2="-18" y2="7"/>
+    <line x1="13"  y1="-7" x2="18"  y2="-7"/>
+    <line x1="13"  y1="0"  x2="18"  y2="0"/>
+    <line x1="13"  y1="7"  x2="18"  y2="7"/>
+  </g>
+  <text x="116" y="478"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="15" font-weight="700"
+        fill="#E94444" letter-spacing="1.5">PROCESADOR</text>
+  <text x="116" y="501"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{PROCESADOR}}</text>
+
+  <rect x="42" y="518" width="56" height="56" rx="7"
+        fill="none" stroke="#E60000" stroke-width="1.8"/>
+  <g transform="translate(70,546)"
+     stroke="#E60000" stroke-width="1.45" fill="none"
+     stroke-linecap="round">
+    <rect x="-15" y="-15" width="30" height="30" rx="2"/>
+    <rect x="-11" y="-11" width="9" height="9" rx="1"/>
+    <line x1="3"  y1="-11" x2="3"  y2="-2"/>
+    <line x1="6"  y1="-11" x2="6"  y2="-2"/>
+    <line x1="9"  y1="-11" x2="9"  y2="-2"/>
+    <rect x="-11" y="2"  width="8" height="6" rx="1"/>
+    <rect x="1"   y="3"  width="10" height="8" rx="1"/>
+    <line x1="-7" y1="-15" x2="-7" y2="-18"/>
+    <line x1="-3" y1="-15" x2="-3" y2="-18"/>
+    <line x1="1"  y1="-15" x2="1"  y2="-18"/>
+    <line x1="5"  y1="-15" x2="5"  y2="-18"/>
+  </g>
+  <text x="116" y="544"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="15" font-weight="700"
+        fill="#E94444" letter-spacing="1.5">MOTHERBOARD</text>
+  <text x="116" y="567"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{MOTHERBOARD}}</text>
+
+  <rect x="42" y="584" width="56" height="74" rx="7"
+        fill="none" stroke="#E60000" stroke-width="1.8"/>
+  <g transform="translate(70,621)"
+     stroke="#E60000" stroke-width="1.45" fill="none"
+     stroke-linecap="round">
+    <rect x="-18" y="-23" width="36" height="14" rx="2"/>
+    <line x1="-12" y1="-23" x2="-12" y2="-28"/>
+    <line x1="-6"  y1="-23" x2="-6"  y2="-28"/>
+    <line x1="0"   y1="-23" x2="0"   y2="-28"/>
+    <line x1="6"   y1="-23" x2="6"   y2="-28"/>
+    <line x1="12"  y1="-23" x2="12"  y2="-28"/>
+    <rect x="-18" y="-3" width="36" height="18" rx="2"/>
+    <circle cx="-12" cy="6" r="2"/>
+    <circle cx="-6"  cy="6" r="2"/>
+    <line x1="0" y1="6" x2="14" y2="6" stroke-width="1.2"/>
+    <line x1="0" y1="10" x2="14" y2="10" stroke-width="1.2"/>
+  </g>
+  <text x="116" y="606"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="15" font-weight="700"
+        fill="#E94444" letter-spacing="1.5">MEMORIA RAM + DISCO</text>
+  <text x="116" y="629"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{MEMORIA_1}}</text>
+  <text x="116" y="652"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{MEMORIA_2}}</text>
+
+  <rect x="42" y="668" width="56" height="74" rx="7"
+        fill="none" stroke="#E60000" stroke-width="1.8"/>
+  <g transform="translate(70,705)"
+     stroke="#E60000" stroke-width="1.45" fill="none"
+     stroke-linecap="round">
+    <rect x="-19" y="-14" width="38" height="22" rx="2"/>
+    <circle cx="-8" cy="-3" r="6"/>
+    <circle cx="-8" cy="-3" r="1.2" fill="#E60000"/>
+    <line x1="-8" y1="-9" x2="-8" y2="-3"/>
+    <line x1="-2" y1="-3" x2="-8" y2="-3"/>
+    <circle cx="8" cy="-3" r="6"/>
+    <circle cx="8" cy="-3" r="1.2" fill="#E60000"/>
+    <line x1="8" y1="-9" x2="8" y2="-3"/>
+    <line x1="14" y1="-3" x2="8" y2="-3"/>
+    <line x1="-19" y1="11" x2="-13" y2="11" stroke-width="2.5"/>
+    <line x1="-9"  y1="11" x2="-3"  y2="11" stroke-width="2.5"/>
+    <line x1="1"   y1="11" x2="7"   y2="11" stroke-width="2.5"/>
+    <line x1="11"  y1="11" x2="17"  y2="11" stroke-width="2.5"/>
+  </g>
+  <text x="116" y="690"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="15" font-weight="700"
+        fill="#E94444" letter-spacing="1.5">PLACA DE VIDEO</text>
+  <text x="116" y="713"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{VIDEO_1}}</text>
+  <text x="116" y="736"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{VIDEO_2}}</text>
+
+  <rect x="42" y="752" width="56" height="56" rx="7"
+        fill="none" stroke="#E60000" stroke-width="1.8"/>
+  <g transform="translate(70,780)">
+    <path d="M 4,-20 L -10,2 L 2,2 L -4,20 L 11,-2 L -1,-2 Z"
+          fill="none" stroke="#E60000" stroke-width="1.8"
+          stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+  <text x="116" y="778"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="15" font-weight="700"
+        fill="#E94444" letter-spacing="1.5">FUENTE DE PODER</text>
+  <text x="116" y="801"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#FFFFFF">{{FUENTE}}</text>
+
+  <image href="{{IMAGEN_URL}}"
+         x="460" y="110" width="600" height="720"
+         preserveAspectRatio="xMidYMid meet"/>
+
+  <line x1="40" y1="858" x2="1040" y2="858"
+        stroke="#2A2A2A" stroke-width="1"/>
+
+  <g transform="translate(150,925)"
+     stroke="#E60000" stroke-width="2.2" fill="none"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 0,-30 L 26,-20 L 26,2 Q 26,22 0,34 Q -26,22 -26,2 L -26,-20 Z"/>
+    <polyline points="-11,3 -3,13 13,-9"/>
+  </g>
+  <text x="200" y="918"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="700"
+        fill="#FFFFFF" letter-spacing="1">{{B1_L1}}</text>
+  <text x="200" y="940"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="400"
+        fill="#FFFFFF" letter-spacing="1">{{B1_L2}}</text>
+
+  <g transform="translate(420,925)"
+     stroke="#E60000" stroke-width="2.2" fill="none"
+     stroke-linejoin="round">
+    <polygon points="0,-30 8,-10 30,-10 13,3 19,24 0,12 -19,24 -13,3 -30,-10 -8,-10"/>
+  </g>
+  <text x="470" y="918"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="700"
+        fill="#FFFFFF" letter-spacing="1">{{B2_L1}}</text>
+  <text x="470" y="940"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="400"
+        fill="#FFFFFF" letter-spacing="1">{{B2_L2}}</text>
+
+  <g transform="translate(680,925)"
+     stroke="#E60000" stroke-width="2.2" fill="none"
+     stroke-linecap="round">
+    <path d="M -24,2 Q -24,-26 0,-26 Q 24,-26 24,2"/>
+    <rect x="-30" y="-2" width="11" height="20" rx="5"/>
+    <rect x="19"  y="-2" width="11" height="20" rx="5"/>
+  </g>
+  <text x="730" y="918"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="700"
+        fill="#FFFFFF" letter-spacing="1">{{B3_L1}}</text>
+  <text x="730" y="940"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="400"
+        fill="#FFFFFF" letter-spacing="1">{{B3_L2}}</text>
+
+  <g transform="translate(910,925)"
+     stroke="#E60000" stroke-width="2.2" fill="none"
+     stroke-linecap="round" stroke-linejoin="round">
+    <rect x="-30" y="-15" width="36" height="25" rx="2"/>
+    <path d="M 6,-15 L 6,-26 L 22,-26 L 30,-8 L 30,10 L 6,10"/>
+    <line x1="22" y1="-26" x2="22" y2="-8" stroke-width="1.8"/>
+    <line x1="22" y1="-8"  x2="30" y2="-8" stroke-width="1.8"/>
+    <circle cx="-15" cy="13" r="6"/>
+    <circle cx="18"  cy="13" r="6"/>
+    <line x1="-42" y1="-5" x2="-34" y2="-5"/>
+    <line x1="-42" y1="3"  x2="-34" y2="3"/>
+  </g>
+  <text x="960" y="918"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="700"
+        fill="#FFFFFF" letter-spacing="1">{{B4_L1}}</text>
+  <text x="960" y="940"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="16" font-weight="400"
+        fill="#FFFFFF" letter-spacing="1">{{B4_L2}}</text>
+
+</svg>

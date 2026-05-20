@@ -2,26 +2,22 @@ import "server-only"
 
 import sharp from "sharp"
 import { getOpenAiApiKey } from "@/lib/openai-integration"
-import { db } from "@/lib/db"
-
-const OPENAI_ID = "openai"
-const EDITS_URL = "https://api.openai.com/v1/images/edits"
+import {
+  bufferFromOpenAiImageResponse,
+  getOpenAiImageModel,
+  openAiImageErrorMessage,
+  OPENAI_IMAGES_EDITS_URL,
+  type OpenAiImageResponse,
+} from "@/lib/flyer/openai-image-utils"
 
 const BG_REMOVE_PROMPT =
-  "Remove the entire background. Keep only the PC case or computer product exactly as shown. " +
-  "Output with a fully transparent background. Do not change the product shape, colors, logos, or proportions. " +
-  "Do not add text, shadows on the floor, or a new background."
-
-async function getImageEditModel(): Promise<string> {
-  const row = await db.integrationSettings.findUnique({ where: { id: OPENAI_ID } })
-  const model = row?.defaultModel?.trim()
-  if (model?.startsWith("gpt-image")) return model
-  return "gpt-image-1"
-}
+  "Remove only the outer studio background. Preserve every detail of the PC case: glass, RGB, cables, reflections, logos, vents and metal. " +
+  "Do not crop, simplify, repaint or erase any part of the hardware. Transparent PNG background only."
 
 async function prepareForOpenAi(input: Buffer): Promise<Buffer> {
   return sharp(input)
     .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
     .png()
     .toBuffer()
 }
@@ -37,7 +33,7 @@ export async function removeBackgroundWithOpenAi(input: Buffer): Promise<Buffer>
     throw new Error("La imagen es demasiado grande para OpenAI (máx. 4 MB)")
   }
 
-  const model = await getImageEditModel()
+  const model = await getOpenAiImageModel()
   const form = new FormData()
   form.append("model", model)
   form.append("prompt", BG_REMOVE_PROMPT)
@@ -45,12 +41,12 @@ export async function removeBackgroundWithOpenAi(input: Buffer): Promise<Buffer>
   form.append("output_format", "png")
   form.append("size", "auto")
   form.append(
-    "image",
+    "image[]",
     new Blob([new Uint8Array(prepared)], { type: "image/png" }),
     "product.png",
   )
 
-  const res = await fetch(EDITS_URL, {
+  const res = await fetch(OPENAI_IMAGES_EDITS_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}` },
     body: form,
@@ -59,28 +55,10 @@ export async function removeBackgroundWithOpenAi(input: Buffer): Promise<Buffer>
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "")
-    if (res.status === 401) throw new Error("API Key de OpenAI inválida")
-    throw new Error(
-      `OpenAI error ${res.status}${errText ? `: ${errText.slice(0, 120)}` : ""}`,
-    )
+    throw new Error(openAiImageErrorMessage(res.status, errText))
   }
 
-  const json = (await res.json()) as {
-    data?: Array<{ b64_json?: string; url?: string }>
-  }
-
-  const item = json.data?.[0]
-  if (!item) throw new Error("OpenAI no devolvió imagen")
-
-  if (item.b64_json) {
-    return Buffer.from(item.b64_json, "base64")
-  }
-
-  if (item.url) {
-    const imgRes = await fetch(item.url, { signal: AbortSignal.timeout(30_000) })
-    if (!imgRes.ok) throw new Error("No se pudo descargar la imagen de OpenAI")
-    return Buffer.from(await imgRes.arrayBuffer())
-  }
-
-  throw new Error("Respuesta de OpenAI sin imagen")
+  const json = (await res.json()) as OpenAiImageResponse
+  const out = await bufferFromOpenAiImageResponse(json)
+  return sharp(out).png().toBuffer()
 }

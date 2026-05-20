@@ -16,7 +16,8 @@ type Props = {
   flyerId: string | undefined
   serperConfigured: boolean
   removeBackground: boolean
-  onImageApplied: (dataUri: string, method: BackgroundRemovalMethod) => void
+  useOpenAi?: boolean
+  onImageApplied: (dataUri: string, method?: BackgroundRemovalMethod) => void
   ensureFlyerId: () => Promise<string>
   onError: (message: string | null) => void
 }
@@ -26,6 +27,7 @@ export default function ReferenceImageSearch({
   flyerId,
   serperConfigured,
   removeBackground,
+  useOpenAi = false,
   onImageApplied,
   ensureFlyerId,
   onError,
@@ -74,6 +76,7 @@ export default function ReferenceImageSearch({
           id,
           imageUrl,
           removeBackground,
+          useOpenAi,
         )
         onImageApplied(dataUri, method)
         setApplyingUrl(null)
@@ -96,14 +99,15 @@ export default function ReferenceImageSearch({
   return (
     <div className="space-y-3 border-t border-white/10 pt-4">
       <p className="text-xs text-white/50">
-        Buscá en Google Imágenes (vía Serper) una foto de referencia para el flyer.
+        Buscá en Google Imágenes (Serper) la foto del <strong className="text-white">gabinete o producto</strong>{" "}
+        que irá a la derecha del flyer.
       </p>
 
       <div className="flex flex-wrap gap-2">
         {(
           [
-            ["case", "Gabinete / PC"],
-            ["product", "Producto"],
+            ["case", "Gabinete"],
+            ["product", "Otro producto"],
           ] as const
         ).map(([value, label]) => (
           <button
