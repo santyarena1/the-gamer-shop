@@ -49,7 +49,7 @@ export default async function CotizadorPage() {
               href="/cotizador/masivo"
               className="px-4 py-2 text-sm rounded-xl border border-white/10 hover:bg-white/5"
             >
-              Variantes
+              Combinaciones
             </Link>
             <Link
               href="/cotizador/lote"
@@ -86,8 +86,8 @@ export default async function CotizadorPage() {
                   <Link href={`/cotizador/${doc.id}`} className="flex-1 min-w-0">
                     <p className="font-medium truncate">{doc.title}</p>
                     <p className="text-xs text-white/40 mt-0.5">
-                      {doc.clientName || "Sin cliente"} · {doc.author.name} ·{" "}
-                      {formatDate(doc.updatedAt)}
+                      {doc.author.name} · {formatDate(doc.updatedAt)}
+                      {doc._count.builds > 1 && ` · ${doc._count.builds} configs`}
                     </p>
                   </Link>
                   <div className="text-right shrink-0">

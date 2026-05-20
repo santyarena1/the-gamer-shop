@@ -7,7 +7,11 @@ export default async function CotizadorNuevoPage() {
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <Header title="Nuevo presupuesto" />
+      <Header
+        title="Nuevo presupuesto"
+        backHref="/cotizador"
+        backLabel="Volver al cotizador"
+      />
       <main className="flex-1 p-6">
         <QuoteDocumentEditor mode="create" />
       </main>

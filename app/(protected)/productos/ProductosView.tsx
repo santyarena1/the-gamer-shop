@@ -17,9 +17,17 @@ type Props = {
   products: StockProduct[]
   fetchedAt: string
   sourceUrl: string
+  internalCount?: number
+  feedUnavailable?: boolean
 }
 
-export default function ProductosView({ products, fetchedAt, sourceUrl }: Props) {
+export default function ProductosView({
+  products,
+  fetchedAt,
+  sourceUrl,
+  internalCount = 0,
+  feedUnavailable = false,
+}: Props) {
   const [search, setSearch] = useState("")
   const [categoria, setCategoria] = useState("")
   const [marca, setMarca] = useState("")
@@ -122,8 +130,22 @@ export default function ProductosView({ products, fetchedAt, sourceUrl }: Props)
           <strong className="text-white/80">{filtered.length.toLocaleString("es-AR")}</strong> de{" "}
           {products.length.toLocaleString("es-AR")} productos
         </span>
-        <span className="text-white/20">·</span>
-        <span>Actualizado {new Date(fetchedAt).toLocaleString("es-AR")}</span>
+        {internalCount > 0 && (
+          <>
+            <span className="text-white/20">·</span>
+            <span>
+              <strong className="text-sky-300/90">{internalCount}</strong> del catálogo interno
+            </span>
+          </>
+        )}
+        {!feedUnavailable && sourceUrl && (
+          <>
+            <span className="text-white/20">·</span>
+            <span>
+              Actualizado {new Date(fetchedAt).toLocaleString("es-AR")} · sync automático cada 1 h
+            </span>
+          </>
+        )}
       </div>
 
       {/* Filters panel */}

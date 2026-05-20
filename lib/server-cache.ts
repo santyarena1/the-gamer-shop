@@ -4,6 +4,7 @@ import { cache } from "react"
 import { unstable_cache } from "next/cache"
 import { db } from "@/lib/db"
 import { fetchStockFeed, type StockFeedResult } from "@/lib/acustock-feed"
+import { getStockFeedSnapshot, setStockFeedSnapshot } from "@/lib/acustock-feed-store"
 import { getBranding } from "@/lib/branding"
 import { getRecurringExpenseAlert } from "@/lib/recurring-expenses"
 import { getSession } from "@/lib/session"
@@ -30,8 +31,13 @@ export const getCachedBranding = unstable_cache(
   { revalidate: 60, tags: ["branding"] },
 )
 
-export const getCachedStockFeed = unstable_cache(
-  async (): Promise<StockFeedResult> => fetchStockFeed(),
-  ["acustock-stock-feed"],
-  { revalidate: 300, tags: ["acustock-feed"] },
-)
+async function loadStockFeed(): Promise<StockFeedResult> {
+  const snap = getStockFeedSnapshot()
+  if (snap) return snap
+  const feed = await fetchStockFeed()
+  setStockFeedSnapshot(feed)
+  return feed
+}
+
+/** Catálogo AcuStock: snapshot en memoria (sync cada 1 h) + dedup por request. */
+export const getCachedStockFeed = cache(loadStockFeed)

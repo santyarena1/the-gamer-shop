@@ -1,9 +1,11 @@
 import type { PcComponentSlot } from "@/lib/quote-builder-constants"
 import {
+  normalizePcSlot,
   PC_SLOTS,
   type LineItemInput,
   type SearchProductResult,
 } from "@/lib/quote-builder-constants"
+import { salePriceFromCost } from "@/lib/quote-pricing"
 
 type PricedLine = { unitPrice: number | string | { toString(): string }; qty: number }
 
@@ -17,8 +19,9 @@ export function computeBuildTotal(items: PricedLine[] | LineItemInput[]) {
 export function lineItemsBySlot<T extends { slot: PcComponentSlot }>(items: T[]) {
   const map = new Map<PcComponentSlot, T>()
   for (const item of items) {
-    if (!map.has(item.slot) || item.slot === "STORAGE" || item.slot === "OTHER") {
-      map.set(item.slot, item)
+    const slot = normalizePcSlot(item.slot)
+    if (!map.has(slot) || slot === "OTHER") {
+      map.set(slot, item)
     }
   }
   return map
@@ -34,7 +37,19 @@ export function applyTemplateSlots(
   try {
     const parsed = JSON.parse(templateJson) as LineItemInput[]
     if (!Array.isArray(parsed)) return []
-    return parsed.filter((l) => l.slot && l.name)
+    return parsed
+      .filter((l) => l.slot && l.name)
+      .map((l) => {
+        const unitCost = Number(l.unitCost ?? l.unitPrice ?? 0)
+        const unitPrice = Number(l.unitPrice ?? unitCost)
+        return {
+          ...l,
+          slot: normalizePcSlot(l.slot),
+          unitCost,
+          unitPrice,
+          qty: l.qty ?? 1,
+        }
+      })
   } catch {
     return []
   }
@@ -47,6 +62,7 @@ export function serializeTemplateSlots(items: LineItemInput[]): string {
       sourceType: l.sourceType,
       sourceRef: l.sourceRef,
       name: l.name,
+      unitCost: l.unitCost,
       unitPrice: l.unitPrice,
       qty: l.qty,
     })),
@@ -76,13 +92,16 @@ export function formatBuildSummary(items: LineItemInput[]) {
 export function searchResultToLineItem(
   result: SearchProductResult,
   slot: PcComponentSlot,
+  markupPercent: number,
 ): LineItemInput {
+  const unitCost = result.unitPrice
   return {
     slot,
     sourceType: result.sourceType,
     sourceRef: result.sourceRef,
     name: result.name,
-    unitPrice: result.unitPrice,
+    unitCost,
+    unitPrice: salePriceFromCost(unitCost, markupPercent),
     qty: 1,
   }
 }

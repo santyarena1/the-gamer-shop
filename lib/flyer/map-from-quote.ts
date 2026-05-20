@@ -19,27 +19,37 @@ const DEFAULT_COMPONENT_ROWS: FlyerComponent[] = [
 
 const SLOT_ICON: Record<PcComponentSlot, FlyerComponentIcon> = {
   CPU: "cpu",
+  COOLER: "cooler",
   MOTHER: "motherboard",
   RAM: "ram_storage",
   GPU: "gpu",
-  STORAGE: "ram_storage",
-  PSU: "psu",
+  SSD_NVME: "ram_storage",
+  HDD: "ram_storage",
   CASE: "other",
-  COOLER: "cooler",
+  PSU: "psu",
   MONITOR: "monitor",
+  KEYBOARD: "other",
+  MOUSE: "other",
+  HEADPHONES: "other",
+  STORAGE: "ram_storage",
   OTHER: "other",
 }
 
 const SLOT_LABEL: Record<PcComponentSlot, string> = {
   CPU: "PROCESADOR",
-  MOTHER: "MOTHERBOARD",
+  COOLER: "REFRIGERACIÓN",
+  MOTHER: "PLACA MADRE",
   RAM: "MEMORIA RAM",
   GPU: "PLACA DE VIDEO",
-  STORAGE: "ALMACENAMIENTO",
-  PSU: "FUENTE DE PODER",
+  SSD_NVME: "DISCO SSD/NVME",
+  HDD: "DISCO HDD",
   CASE: "GABINETE",
-  COOLER: "COOLER",
+  PSU: "FUENTE DE PODER",
   MONITOR: "MONITOR",
+  KEYBOARD: "TECLADO",
+  MOUSE: "MOUSE",
+  HEADPHONES: "AURICULARES",
+  STORAGE: "DISCO SSD/NVME",
   OTHER: "OTROS",
 }
 
@@ -64,8 +74,10 @@ function itemBySlot(items: LineItemInput[], slot: PcComponentSlot) {
 
 export function lineItemsToFlyerComponents(items: LineItemInput[]): FlyerComponent[] {
   const ram = itemBySlot(items, "RAM")
-  const storage = itemBySlot(items, "STORAGE")
-  const ramStorageValue = [ram?.name, storage?.name].filter(Boolean).join("\n")
+  const ssd = itemBySlot(items, "SSD_NVME") ?? itemBySlot(items, "STORAGE")
+  const hdd = itemBySlot(items, "HDD")
+  const storageParts = [ssd?.name, hdd?.name].filter(Boolean)
+  const ramStorageValue = [ram?.name, ...storageParts].filter(Boolean).join("\n")
 
   const rows: FlyerComponent[] = []
 
@@ -90,7 +102,12 @@ export function lineItemsToFlyerComponents(items: LineItemInput[]): FlyerCompone
   if (ramStorageValue) {
     rows.push({
       icon: "ram_storage",
-      label: ram && storage ? "MEMORIA RAM + DISCO" : ram ? SLOT_LABEL.RAM : "ALMACENAMIENTO",
+      label:
+        ram && storageParts.length
+          ? "MEMORIA RAM + DISCO"
+          : ram
+            ? SLOT_LABEL.RAM
+            : "ALMACENAMIENTO",
       value: ramStorageValue.toUpperCase(),
     })
   }
@@ -114,7 +131,21 @@ export function lineItemsToFlyerComponents(items: LineItemInput[]): FlyerCompone
   }
 
   for (const item of items) {
-    if (["CPU", "MOTHER", "RAM", "GPU", "STORAGE", "PSU"].includes(item.slot)) continue
+    if (
+      [
+        "CPU",
+        "COOLER",
+        "MOTHER",
+        "RAM",
+        "GPU",
+        "SSD_NVME",
+        "HDD",
+        "STORAGE",
+        "PSU",
+      ].includes(item.slot)
+    ) {
+      continue
+    }
     rows.push({
       icon: SLOT_ICON[item.slot],
       label: SLOT_LABEL[item.slot],

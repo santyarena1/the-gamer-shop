@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import type { PcComponentSlot } from "@/lib/quote-builder-constants"
 import { createDocumentWithVariants, savePcBuildTemplate } from "@/actions/quote-builder"
 import { computeBuildTotal, searchResultToLineItem, variantFromBase } from "@/lib/quote-builder"
+import { DEFAULT_MARKUP_PERCENT } from "@/lib/quote-pricing"
 import {
   PC_SLOTS,
   SLOT_LABELS,
@@ -21,8 +22,7 @@ export default function VariantMatrixWizard({ templates }: { templates: Template
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  const [title, setTitle] = useState("")
-  const [clientName, setClientName] = useState("")
+  const [markupPercent] = useState(DEFAULT_MARKUP_PERCENT)
   const [baseItems, setBaseItems] = useState<LineItemInput[]>([])
   const [varySlot, setVarySlot] = useState<PcComponentSlot | "">("")
   const [alternatives, setAlternatives] = useState<LineItemInput[]>([])
@@ -41,7 +41,7 @@ export default function VariantMatrixWizard({ templates }: { templates: Template
 
   function handleAddAlternative(result: SearchProductResult) {
     if (!varySlot) return
-    const line = searchResultToLineItem(result, varySlot)
+    const line = searchResultToLineItem(result, varySlot, markupPercent)
     setAlternatives((prev) => {
       const exists = prev.some((p) => p.sourceRef === line.sourceRef)
       if (exists) return prev
@@ -55,8 +55,6 @@ export default function VariantMatrixWizard({ templates }: { templates: Template
     startTransition(async () => {
       try {
         await createDocumentWithVariants({
-          title: title || "Presupuesto variantes",
-          clientName,
           baseItems,
           slot: varySlot,
           variants: alternatives.map((alt) => variantFromBase(baseItems, varySlot, alt)),
@@ -85,18 +83,10 @@ export default function VariantMatrixWizard({ templates }: { templates: Template
       {step === 1 && (
         <div className="space-y-4">
           <h2 className="font-semibold">Configuración base</h2>
-          <input
-            placeholder="Título del presupuesto"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-[#141414] border border-white/10 rounded-xl px-4 py-2.5 text-sm"
-          />
-          <input
-            placeholder="Cliente (opcional)"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            className="w-full bg-[#141414] border border-white/10 rounded-xl px-4 py-2.5 text-sm"
-          />
+          <p className="text-sm text-white/45">
+            El título del documento se arma solo al crear (ej. &quot;Variantes — Placa de
+            video (3 configs)&quot;).
+          </p>
           {templates.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {templates.map((t) => (
@@ -266,6 +256,7 @@ export default function VariantMatrixWizard({ templates }: { templates: Template
       {pickSlot && (
         <ProductSearchCombobox
           slot={pickSlot}
+          markupPercent={markupPercent}
           onSelect={handleAddAlternative}
           onClose={() => setPickSlot(null)}
         />

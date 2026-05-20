@@ -1,28 +1,32 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import {
   createQuoteDocument,
   updateQuoteDocument,
   sendToQuoteForum,
 } from "@/actions/quote-builder"
 import { computeBuildTotal } from "@/lib/quote-builder"
+import { buildQuoteTitleFromLineItems } from "@/lib/quote-document-title"
+import {
+  applyMarkupToLineItems,
+  DEFAULT_MARKUP_PERCENT,
+} from "@/lib/quote-pricing"
 import { QUOTE_DOCUMENT_STATUS_LABELS, type LineItemInput } from "@/lib/quote-builder-constants"
 import { formatCurrency } from "@/lib/utils"
 import Link from "next/link"
 import BuildSlotGrid from "./BuildSlotGrid"
+import MarkupPercentControl from "./MarkupPercentControl"
 
 type Props = {
   mode: "create" | "edit"
   documentId?: string
   buildId?: string
   initial?: {
-    title: string
-    clientName: string
-    clientPhone: string
     notes: string
     status: string
+    markupPercent: number
     lineItems: LineItemInput[]
     threadId?: string | null
   }
@@ -33,12 +37,18 @@ export default function QuoteDocumentEditor({ mode, documentId, buildId, initial
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  const [title, setTitle] = useState(initial?.title ?? "")
-  const [clientName, setClientName] = useState(initial?.clientName ?? "")
-  const [clientPhone, setClientPhone] = useState(initial?.clientPhone ?? "")
   const [notes, setNotes] = useState(initial?.notes ?? "")
+  const [markupPercent, setMarkupPercent] = useState(
+    initial?.markupPercent ?? DEFAULT_MARKUP_PERCENT,
+  )
   const [lineItems, setLineItems] = useState<LineItemInput[]>(initial?.lineItems ?? [])
 
+  function handleMarkupChange(next: number) {
+    setMarkupPercent(next)
+    setLineItems((items) => applyMarkupToLineItems(items, next))
+  }
+
+  const autoTitle = useMemo(() => buildQuoteTitleFromLineItems(lineItems), [lineItems])
   const total = computeBuildTotal(lineItems)
 
   function handleSave(status?: "DRAFT" | "CONFIRMED") {
@@ -47,20 +57,16 @@ export default function QuoteDocumentEditor({ mode, documentId, buildId, initial
       try {
         if (mode === "create") {
           const id = await createQuoteDocument({
-            title: title || "Presupuesto PC",
-            clientName,
-            clientPhone,
             notes,
             lineItems,
+            markupPercent,
           })
           router.push(`/cotizador/${id}`)
         } else if (documentId) {
           await updateQuoteDocument(documentId, {
-            title: title || "Presupuesto PC",
-            clientName,
-            clientPhone,
             notes,
             lineItems,
+            markupPercent,
             buildId,
             status,
           })
@@ -87,10 +93,11 @@ export default function QuoteDocumentEditor({ mode, documentId, buildId, initial
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Título del presupuesto" value={title} onChange={setTitle} required />
-        <Field label="Cliente" value={clientName} onChange={setClientName} />
-        <Field label="Teléfono" value={clientPhone} onChange={setClientPhone} />
+      <div className="space-y-4">
+        <div className="rounded-xl border border-white/10 bg-[#141414] px-4 py-3">
+          <p className="text-xs text-white/40">Título (automático según componentes)</p>
+          <p className="text-sm font-medium text-white/90 mt-0.5">{autoTitle}</p>
+        </div>
         <div>
           <label className="text-xs text-white/50 mb-1 block">Estado</label>
           <p className="text-sm text-white/70">
@@ -99,15 +106,20 @@ export default function QuoteDocumentEditor({ mode, documentId, buildId, initial
               : "Borrador"}
           </p>
         </div>
+        <Field
+          label="Notas internas"
+          value={notes}
+          onChange={setNotes}
+          multiline
+        />
       </div>
-      <Field
-        label="Notas internas"
-        value={notes}
-        onChange={setNotes}
-        multiline
-      />
 
-      <BuildSlotGrid items={lineItems} onChange={setLineItems} />
+      <MarkupPercentControl value={markupPercent} onChange={handleMarkupChange} />
+      <BuildSlotGrid
+        items={lineItems}
+        onChange={setLineItems}
+        markupPercent={markupPercent}
+      />
 
       {error && (
         <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
@@ -183,13 +195,11 @@ function Field({
   label,
   value,
   onChange,
-  required,
   multiline,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
-  required?: boolean
   multiline?: boolean
 }) {
   const className =
@@ -209,7 +219,6 @@ function Field({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          required={required}
           className={className}
         />
       )}

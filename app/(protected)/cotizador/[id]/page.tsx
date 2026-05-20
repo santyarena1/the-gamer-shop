@@ -6,6 +6,7 @@ import Header from "@/components/Header"
 import QuoteDocumentEditor from "@/components/cotizador/QuoteDocumentEditor"
 import type { LineItemInput } from "@/lib/quote-builder-constants"
 import { computeBuildTotal } from "@/lib/quote-builder"
+import { normalizeLineItemPricing } from "@/lib/quote-pricing"
 import { formatCurrency } from "@/lib/utils"
 
 type Props = { params: Promise<{ id: string }> }
@@ -27,19 +28,30 @@ export default async function CotizadorDetailPage({ params }: Props) {
   if (!doc) notFound()
 
   const primaryBuild = doc.builds[0]
+  const markupPercent = Number(doc.markupPercent ?? 30)
   const lineItems: LineItemInput[] =
-    primaryBuild?.lineItems.map((li) => ({
-      slot: li.slot,
-      sourceType: li.sourceType,
-      sourceRef: li.sourceRef,
-      name: li.name,
-      unitPrice: Number(li.unitPrice),
-      qty: li.qty,
-    })) ?? []
+    primaryBuild?.lineItems.map((li) =>
+      normalizeLineItemPricing(
+        {
+          slot: li.slot,
+          sourceType: li.sourceType,
+          sourceRef: li.sourceRef,
+          name: li.name,
+          unitCost: Number(li.unitCost ?? 0),
+          unitPrice: Number(li.unitPrice),
+          qty: li.qty,
+        },
+        markupPercent,
+      ),
+    ) ?? []
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <Header title={doc.title} />
+      <Header
+        title={doc.title}
+        backHref="/cotizador"
+        backLabel="Volver al cotizador"
+      />
       <main className="flex-1 p-6 space-y-6">
         {doc.builds.length > 1 && (
           <div className="rounded-xl border border-white/10 bg-[#141414] p-4 space-y-2">
@@ -78,11 +90,9 @@ export default async function CotizadorDetailPage({ params }: Props) {
           documentId={doc.id}
           buildId={primaryBuild?.id}
           initial={{
-            title: doc.title,
-            clientName: doc.clientName ?? "",
-            clientPhone: doc.clientPhone ?? "",
             notes: doc.notes ?? "",
             status: doc.status,
+            markupPercent,
             lineItems,
             threadId: doc.threadId,
           }}

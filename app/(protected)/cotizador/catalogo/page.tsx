@@ -15,11 +15,15 @@ export default async function CotizadorCatalogoPage() {
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <Header title="Catálogo interno" />
+      <Header
+        title="Catálogo interno"
+        backHref="/cotizador"
+        backLabel="Volver al cotizador"
+      />
       <main className="flex-1 p-6">
         <p className="text-sm text-white/50 mb-6">
-          Productos visibles solo al armar presupuestos en el Cotizador (no aparecen en
-          Productos/AcuStock).
+          Productos del cotizador: también aparecen en la lista de Productos (etiqueta
+          &quot;Catálogo interno&quot;) y al buscar en presupuestos.
         </p>
         <QuoteCatalogView items={items.map((i) => ({
           ...i,

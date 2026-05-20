@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import type { PcComponentSlot } from "@/lib/quote-builder-constants"
 import { searchQuoteProducts } from "@/lib/quote-product-search"
+import { getSession } from "@/lib/session"
 
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -9,8 +10,14 @@ export async function GET(request: NextRequest) {
   }
 
   const q = request.nextUrl.searchParams.get("q") ?? ""
+  const slot = request.nextUrl.searchParams.get("slot") as PcComponentSlot | null
   const limit = Math.min(parseInt(request.nextUrl.searchParams.get("limit") ?? "25", 10), 50)
 
-  const results = await searchQuoteProducts(q, limit)
-  return NextResponse.json({ results })
+  const data = await searchQuoteProducts(q, {
+    userId: session.userId,
+    slot: slot ?? undefined,
+    limit,
+  })
+
+  return NextResponse.json(data)
 }

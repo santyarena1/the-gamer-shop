@@ -1,5 +1,36 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Base de datos local (PostgreSQL)
+
+La URL y la contraseña van en **`.env.local`** (git lo ignora; no se pierden con `git pull` / `git push`).
+
+```powershell
+copy .env.local.example .env.local
+```
+
+Editá `POSTGRES_PASSWORD` con tu clave de pgAdmin. Si no conecta, ejecutá como **Administrador**:
+
+```powershell
+.\scripts\reset-postgres-password.ps1
+```
+
+Eso deja la contraseña en `devlocal` y la guarda en `.env.local`.
+
+## Feed AcuStock (XML)
+
+Con `npm run dev`, el servidor sincroniza el feed cada **1 hora** (y una vez al arrancar). En Productos verás la fecha de última actualización.
+
+Para cron externo o producción en Vercel:
+
+```env
+CRON_SECRET=una-clave-larga-aleatoria
+```
+
+```http
+GET /api/cron/sync-acustock-feed
+Authorization: Bearer <CRON_SECRET>
+```
+
 ## Getting Started
 
 First, run the development server:

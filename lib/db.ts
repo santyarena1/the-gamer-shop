@@ -1,8 +1,9 @@
 import { PrismaClient } from "@/app/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
+import { getDatabaseUrl } from "@/lib/database-url"
 
 /** Bump when cambia prisma/schema.prisma para invalidar el cliente en caché (dev). */
-const PRISMA_CLIENT_VERSION = "2026-flyer-generator"
+const PRISMA_CLIENT_VERSION = "2026-catalog-sku-unique"
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient
@@ -11,7 +12,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+    adapter: new PrismaPg({ connectionString: getDatabaseUrl() }),
   })
 }
 

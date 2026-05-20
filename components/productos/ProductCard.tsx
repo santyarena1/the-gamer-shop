@@ -24,7 +24,7 @@ export default function ProductCard({
   const category = getProductCategory(product)
   const brand = getProductBrand(product)
   const stock = getProductStock(product)
-  const status = stockStatus(stock)
+  const status = stockStatus(stock, product)
 
   return (
     <button

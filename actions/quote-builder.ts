@@ -7,6 +7,12 @@ import type { PcComponentSlot, QuoteDocumentStatus } from "@/app/generated/prism
 import { getSession } from "@/lib/session"
 import { applyTemplateSlots, serializeTemplateSlots } from "@/lib/quote-builder"
 import type { LineItemInput } from "@/lib/quote-builder-constants"
+import {
+  buildBatchQuoteTitle,
+  buildQuoteTitleFromLineItems,
+  buildVariantsQuoteTitle,
+} from "@/lib/quote-document-title"
+import { DEFAULT_MARKUP_PERCENT } from "@/lib/quote-pricing"
 
 async function requireUser() {
   const session = await getSession()
@@ -29,6 +35,7 @@ async function saveBuildLineItems(buildId: string, items: LineItemInput[]) {
       sourceType: item.sourceType,
       sourceRef: item.sourceRef,
       name: item.name,
+      unitCost: item.unitCost,
       unitPrice: item.unitPrice,
       qty: item.qty,
       sortOrder: i,
@@ -37,21 +44,21 @@ async function saveBuildLineItems(buildId: string, items: LineItemInput[]) {
 }
 
 export async function createQuoteDocument(data: {
-  title: string
-  clientName?: string
-  clientPhone?: string
   notes?: string
   lineItems: LineItemInput[]
+  markupPercent?: number
   buildLabel?: string
 }) {
   const session = await requireUser()
+  const markup = data.markupPercent ?? DEFAULT_MARKUP_PERCENT
 
   const doc = await db.quoteDocument.create({
     data: {
-      title: data.title.trim() || "Presupuesto sin título",
-      clientName: data.clientName?.trim() || null,
-      clientPhone: data.clientPhone?.trim() || null,
+      title: buildQuoteTitleFromLineItems(data.lineItems),
+      clientName: null,
+      clientPhone: null,
       notes: data.notes?.trim() || null,
+      markupPercent: markup,
       authorId: session.userId,
       builds: {
         create: {
@@ -73,12 +80,10 @@ export async function createQuoteDocument(data: {
 export async function updateQuoteDocument(
   documentId: string,
   data: {
-    title: string
-    clientName?: string
-    clientPhone?: string
     notes?: string
     status?: QuoteDocumentStatus
     lineItems: LineItemInput[]
+    markupPercent?: number
     buildId?: string
   },
 ) {
@@ -87,10 +92,11 @@ export async function updateQuoteDocument(
   await db.quoteDocument.update({
     where: { id: documentId },
     data: {
-      title: data.title.trim(),
-      clientName: data.clientName?.trim() || null,
-      clientPhone: data.clientPhone?.trim() || null,
+      title: buildQuoteTitleFromLineItems(data.lineItems),
+      clientName: null,
+      clientPhone: null,
       notes: data.notes?.trim() || null,
+      ...(data.markupPercent != null ? { markupPercent: data.markupPercent } : {}),
       ...(data.status ? { status: data.status } : {}),
     },
   })
@@ -110,9 +116,6 @@ export async function updateQuoteDocument(
 }
 
 export async function createDocumentWithVariants(data: {
-  title: string
-  clientName?: string
-  clientPhone?: string
   notes?: string
   baseItems: LineItemInput[]
   slot: PcComponentSlot
@@ -122,9 +125,9 @@ export async function createDocumentWithVariants(data: {
 
   const doc = await db.quoteDocument.create({
     data: {
-      title: data.title.trim(),
-      clientName: data.clientName?.trim() || null,
-      clientPhone: data.clientPhone?.trim() || null,
+      title: buildVariantsQuoteTitle(data.slot, data.variants.length),
+      clientName: null,
+      clientPhone: null,
       notes: data.notes?.trim() || null,
       status: "CONFIRMED",
       authorId: session.userId,
@@ -154,23 +157,25 @@ export async function createDocumentWithVariants(data: {
 
 export async function createBatchDocuments(
   rows: {
-    title: string
-    clientName?: string
-    clientPhone?: string
+    label?: string
     notes?: string
     lineItems: LineItemInput[]
   }[],
+  markupPercent?: number,
 ) {
   const session = await requireUser()
+  const markup = markupPercent ?? DEFAULT_MARKUP_PERCENT
   const ids: string[] = []
 
-  for (const row of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
     const doc = await db.quoteDocument.create({
       data: {
-        title: row.title.trim() || "Presupuesto",
-        clientName: row.clientName?.trim() || null,
-        clientPhone: row.clientPhone?.trim() || null,
+        title: buildBatchQuoteTitle(i, rows.length, row.label),
+        clientName: null,
+        clientPhone: null,
         notes: row.notes?.trim() || null,
+        markupPercent: markup,
         status: "DRAFT",
         authorId: session.userId,
         builds: { create: { label: "Configuración", sortOrder: 0 } },
@@ -221,6 +226,7 @@ export async function duplicateQuoteDocument(documentId: string) {
       clientName: original.clientName,
       clientPhone: original.clientPhone,
       notes: original.notes,
+      markupPercent: original.markupPercent,
       status: "DRAFT",
       authorId: session.userId,
     },
@@ -241,6 +247,7 @@ export async function duplicateQuoteDocument(documentId: string) {
         sourceType: li.sourceType,
         sourceRef: li.sourceRef,
         name: li.name,
+        unitCost: li.unitCost,
         unitPrice: li.unitPrice,
         qty: li.qty,
         sortOrder: li.sortOrder,

@@ -1,5 +1,8 @@
 import type { StockProduct } from "@/lib/acustock-feed"
+import { isInternalCatalogProduct } from "@/lib/product-sources"
 import { formatCurrency } from "@/lib/utils"
+
+export { isInternalCatalogProduct } from "@/lib/product-sources"
 
 const IMAGE_FIELD_KEYS = [
   "imagen",
@@ -64,6 +67,7 @@ export function getProductSalePrice(product: StockProduct) {
 }
 
 export function getProductStock(product: StockProduct) {
+  if (isInternalCatalogProduct(product)) return 1
   const raw = getField(product, "stock", "cantidad", "qty")
   const n = parseInt(raw, 10)
   return Number.isFinite(n) ? n : 0
@@ -74,7 +78,13 @@ export function formatProductPrice(product: StockProduct) {
   return price != null ? formatCurrency(price) : "—"
 }
 
-export function stockStatus(stock: number) {
+export function stockStatus(stock: number, product?: StockProduct) {
+  if (product && isInternalCatalogProduct(product)) {
+    return {
+      label: "Catálogo interno",
+      className: "bg-sky-500/15 text-sky-300 border-sky-500/25",
+    }
+  }
   if (stock <= 0) return { label: "Sin stock", className: "bg-red-500/15 text-red-400 border-red-500/25" }
   if (stock <= 5) return { label: "Stock bajo", className: "bg-amber-500/15 text-amber-400 border-amber-500/25" }
   return { label: "En stock", className: "bg-green-500/15 text-green-400 border-green-500/25" }
@@ -163,10 +173,12 @@ export function productMatchesQuickFilters(
   if (opts.categoria && getProductCategory(product) !== opts.categoria) return false
   if (opts.marca && getProductBrand(product) !== opts.marca) return false
 
-  const stock = getProductStock(product)
-  if (opts.stockMode === "in" && stock <= 0) return false
-  if (opts.stockMode === "out" && stock > 0) return false
-  if (opts.stockMode === "low" && (stock <= 0 || stock > 5)) return false
+  if (!isInternalCatalogProduct(product)) {
+    const stock = getProductStock(product)
+    if (opts.stockMode === "in" && stock <= 0) return false
+    if (opts.stockMode === "out" && stock > 0) return false
+    if (opts.stockMode === "low" && (stock <= 0 || stock > 5)) return false
+  }
 
   const price = getProductPrice(product)
   if (opts.priceMin) {

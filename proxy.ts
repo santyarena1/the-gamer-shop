@@ -1,21 +1,33 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { clearSessionCookie, verifySessionToken } from "@/lib/session-token"
 
 const publicPaths = ["/login"]
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const session = request.cookies.get("session")
+
+  if (pathname.startsWith("/api/cron/")) {
+    return NextResponse.next()
+  }
+
+  const token = request.cookies.get("session")?.value
+  const session = await verifySessionToken(token)
+  const hasStaleCookie = Boolean(token) && !session
 
   if (publicPaths.includes(pathname)) {
     if (session) {
       return NextResponse.redirect(new URL("/dashboard", request.url))
     }
-    return NextResponse.next()
+    const response = NextResponse.next()
+    if (hasStaleCookie) clearSessionCookie(response)
+    return response
   }
 
   if (!session) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    const response = NextResponse.redirect(new URL("/login", request.url))
+    if (hasStaleCookie) clearSessionCookie(response)
+    return response
   }
 
   return NextResponse.next()

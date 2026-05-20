@@ -36,11 +36,7 @@ export default async function CotizadorExportPage({ params }: Props) {
         </div>
 
         <h1 className="text-2xl font-bold">{doc.title}</h1>
-        <p className="text-gray-600 text-sm mt-1">
-          {doc.clientName && `${doc.clientName} · `}
-          {doc.clientPhone && `${doc.clientPhone} · `}
-          {formatDate(doc.updatedAt)}
-        </p>
+        <p className="text-gray-600 text-sm mt-1">{formatDate(doc.updatedAt)}</p>
         {doc.notes && <p className="text-gray-600 text-sm mt-2">{doc.notes}</p>}
 
         {doc.builds.map((build) => (

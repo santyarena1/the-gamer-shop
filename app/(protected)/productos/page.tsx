@@ -2,23 +2,31 @@ import Link from "next/link"
 import { requireSession } from "@/lib/auth"
 import { StockFeedError } from "@/lib/acustock-feed"
 import { getCachedStockFeed } from "@/lib/server-cache"
+import {
+  listActiveCatalogAsStockProducts,
+  mergeFeedWithCatalog,
+} from "@/lib/quote-catalog-products"
 import Header from "@/components/Header"
 import ProductosView from "./ProductosView"
 
 export default async function ProductosPage() {
   await requireSession()
 
+  const catalogProducts = await listActiveCatalogAsStockProducts()
+
   try {
     const feed = await getCachedStockFeed()
+    const products = mergeFeedWithCatalog(feed.products, catalogProducts)
 
     return (
       <div className="flex flex-col flex-1 overflow-auto">
         <Header title="Productos" />
         <main className="flex-1 p-6">
           <ProductosView
-            products={feed.products}
+            products={products}
             fetchedAt={feed.fetchedAt}
             sourceUrl={feed.sourceUrl}
+            internalCount={catalogProducts.length}
           />
         </main>
       </div>
@@ -30,6 +38,28 @@ export default async function ProductosPage() {
         : "No se pudo cargar el catálogo de productos."
 
     const isAuth = error instanceof StockFeedError && error.code === "AUTH"
+
+    if (catalogProducts.length > 0) {
+      return (
+        <div className="flex flex-col flex-1 overflow-auto">
+          <Header title="Productos" />
+          <main className="flex-1 p-6">
+            <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
+              El feed de AcuStock no está disponible ({message}). Mostrando{" "}
+              {catalogProducts.length} producto
+              {catalogProducts.length === 1 ? "" : "s"} del catálogo interno.
+            </div>
+            <ProductosView
+              products={catalogProducts}
+              fetchedAt={new Date().toISOString()}
+              sourceUrl=""
+              internalCount={catalogProducts.length}
+              feedUnavailable
+            />
+          </main>
+        </div>
+      )
+    }
 
     return (
       <div className="flex flex-col flex-1 overflow-auto">

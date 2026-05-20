@@ -27,7 +27,7 @@ export default function ProductDetailModal({
   const name = getProductName(product)
   const sku = getProductSku(product)
   const stock = getProductStock(product)
-  const status = stockStatus(stock)
+  const status = stockStatus(stock, product)
   const salePrice = getProductSalePrice(product)
   const entries = productDetailEntries(product)
 

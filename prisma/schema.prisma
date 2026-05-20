@@ -343,14 +343,19 @@ model QuoteQuickButton {
 
 enum PcComponentSlot {
   CPU
+  COOLER
   MOTHER
   RAM
   GPU
-  STORAGE
-  PSU
+  SSD_NVME
+  HDD
   CASE
-  COOLER
+  PSU
   MONITOR
+  KEYBOARD
+  MOUSE
+  HEADPHONES
+  STORAGE
   OTHER
 }
 
@@ -369,7 +374,8 @@ enum QuoteDocumentStatus {
 model QuoteCatalogItem {
   id          String   @id @default(cuid())
   name        String
-  sku         String?
+  /// Código estable para importar/exportar; si cambia el nombre, el precio sigue al SKU.
+  sku         String?  @unique
   category    String   @default("Otro")
   unitPrice   Decimal  @db.Decimal(12, 2)
   description String?
@@ -404,6 +410,8 @@ model QuoteDocument {
   clientName  String?
   clientPhone String?
   notes       String?
+  /// Margen sobre costo (ej. 30 = +30%)
+  markupPercent Decimal           @default(30) @db.Decimal(5, 2)
   status      QuoteDocumentStatus @default(DRAFT)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
@@ -438,6 +446,7 @@ model QuoteLineItem {
   sourceType QuoteLineSourceType
   sourceRef  String
   name       String
+  unitCost   Decimal             @default(0) @db.Decimal(12, 2)
   unitPrice  Decimal             @db.Decimal(12, 2)
   qty        Int                 @default(1)
   sortOrder  Int                 @default(0)
