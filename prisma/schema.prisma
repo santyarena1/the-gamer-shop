@@ -497,3 +497,35 @@ model IntegrationSettings {
 
   @@map("integration_settings")
 }
+
+/// Marca para objetivos de compra (Marketing).
+model MarketingBrand {
+  id        String   @id @default(cuid())
+  name      String
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories MarketingPurchaseGoalCategory[]
+
+  @@unique([name])
+  @@map("marketing_brands")
+}
+
+/// Categoría dentro de una marca con objetivo y avance actual.
+model MarketingPurchaseGoalCategory {
+  id            String   @id @default(cuid())
+  name          String
+  targetAmount  Decimal  @db.Decimal(12, 2)
+  currentAmount Decimal  @default(0) @db.Decimal(12, 2)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  brand   MarketingBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId String
+
+  @@unique([brandId, name])
+  @@map("marketing_purchase_goal_categories")
+}

@@ -16,6 +16,10 @@ const presupuestosGroup: NavItem[] = [
   { href: "/cotizador", label: "Cotizador" },
 ]
 
+const marketingGroup: NavItem[] = [
+  { href: "/marketing/objetivos-compra", label: "Objetivos de compra" },
+]
+
 const configuracionGroup: NavItem[] = [
   { href: "/configuracion", label: "General" },
   { href: "/usuarios", label: "Usuarios" },
@@ -322,6 +326,7 @@ export default function Sidebar({
               pending={pendingHref === "/gastos"}
               onNavigate={setPendingHref}
             />
+            <NavGroup label="Marketing" icon="📣" items={marketingGroup} {...navProps} />
             <NavGroup label="Configuración" icon="⚙" items={configuracionGroup} {...navProps} />
             <NavLink
               href="/tareas"
