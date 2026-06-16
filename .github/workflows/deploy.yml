@@ -45,9 +45,10 @@ jobs:
       # Estrategia: migrate ANTES de deploy (schema primero, luego app)
       # Si migrate falla → deploy no ocurre (safe).
       # Si deploy falla → app sigue en versión anterior (compatible con schema ya migrado).
+      # DATABASE_URL_UNPOOLED: conexión directa a Neon (sin pgBouncer) requerida por Prisma migrate
       - name: Run Prisma migrations
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
         run: npx prisma migrate deploy
 
       - name: Deploy to Vercel (Production)
