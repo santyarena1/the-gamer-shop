@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  eslint: {
+    // Lint corre como paso separado en CI; no duplicar en next build
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {
