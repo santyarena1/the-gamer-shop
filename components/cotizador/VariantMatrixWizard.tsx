@@ -108,7 +108,7 @@ export default function VariantMatrixWizard({ templates }: { templates: Template
               ))}
             </div>
           )}
-          <BuildSlotGrid items={baseItems} onChange={setBaseItems} />
+          <BuildSlotGrid items={baseItems} onChange={setBaseItems} markupPercent={markupPercent} />
           <div className="flex gap-2">
             <button
               type="button"

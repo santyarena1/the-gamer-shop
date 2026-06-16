@@ -43,6 +43,7 @@ export default async function GeneradorImagenesNuevoPage({ searchParams }: Props
         sourceType: li.sourceType,
         sourceRef: li.sourceRef,
         name: li.name,
+        unitCost: Number(li.unitCost),
         unitPrice: Number(li.unitPrice),
         qty: li.qty,
       }))
