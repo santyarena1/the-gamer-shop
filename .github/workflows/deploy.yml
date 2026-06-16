@@ -1,0 +1,59 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [master]
+
+env:
+  VERCEL_ORG_ID: team_LkuRathYVYhkQJ6EX0Hiksk2
+  VERCEL_PROJECT_ID: prj_qSmpNbISQAE9vrsZDQ2ro9bTLXVR
+
+jobs:
+  deploy:
+    name: Build, Migrate & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          PASSWORD_RESET_SECRET: ${{ secrets.PASSWORD_RESET_SECRET }}
+          ACUSTOCK_FEED_TOKEN: ${{ secrets.ACUSTOCK_FEED_TOKEN }}
+          ACUSTOCK_FEED_SOLO_WEB: ${{ secrets.ACUSTOCK_FEED_SOLO_WEB }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+        run: npm run build
+
+      # Estrategia: migrate ANTES de deploy (schema primero, luego app)
+      # Si migrate falla → deploy no ocurre (safe).
+      # Si deploy falla → app sigue en versión anterior (compatible con schema ya migrado).
+      - name: Run Prisma migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate deploy
+
+      - name: Deploy to Vercel (Production)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          npx vercel build --prod --token=$VERCEL_TOKEN
+          npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
