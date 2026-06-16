@@ -16,6 +16,32 @@ Editá `POSTGRES_PASSWORD` con tu clave de pgAdmin. Si no conecta, ejecutá como
 
 Eso deja la contraseña en `devlocal` y la guarda en `.env.local`.
 
+### Backup y restore (migrar de PC o deploy sin perder datos)
+
+Este repo incluye backup/restauración consistente de PostgreSQL usando dump binario.
+
+```powershell
+npm run db:backup
+```
+
+Genera un archivo `.dump` en `backups/db/` (ignorado por git).
+
+```powershell
+npm run db:restore
+```
+
+Restaura el último backup encontrado en `backups/db/`.
+
+Flujo recomendado para mover el sistema a otra PC o entorno:
+
+1. En origen: `npm run db:backup`
+2. Copiar el `.dump` al destino
+3. En destino: configurar `.env.local` con la nueva `DATABASE_URL` y `POSTGRES_PASSWORD`
+4. Crear esquema: `npm run db:migrate`
+5. Restaurar datos: `npm run db:restore`
+
+Nota: los dumps pueden contener datos sensibles. No subirlos al repo.
+
 ## Feed AcuStock (XML)
 
 Con `npm run dev`, el servidor sincroniza el feed cada **1 hora** (y una vez al arrancar). En Productos verás la fecha de última actualización.

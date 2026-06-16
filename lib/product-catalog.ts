@@ -1,5 +1,9 @@
 import type { StockProduct } from "@/lib/acustock-feed"
-import { isInternalCatalogProduct } from "@/lib/product-sources"
+import {
+  getProductDistributor,
+  isInternalCatalogProduct,
+  type ProductDistributorCode,
+} from "@/lib/product-sources"
 import { formatCurrency } from "@/lib/utils"
 
 export { isInternalCatalogProduct } from "@/lib/product-sources"
@@ -26,7 +30,28 @@ export const FILTER_FIELD_KEYS = [
   "sincronizar_web",
 ] as const
 
-export type ProductSort = "nombre-asc" | "nombre-desc" | "precio-asc" | "precio-desc" | "stock-desc"
+export type ProductSort =
+  | "nombre-asc"
+  | "nombre-desc"
+  | "precio-asc"
+  | "precio-desc"
+  | "stock-desc"
+  | "stock-asc"
+  | "sku-asc"
+  | "marca-asc"
+  | "categoria-asc"
+
+export const PRODUCT_SORT_OPTIONS: { value: ProductSort; label: string }[] = [
+  { value: "nombre-asc", label: "Nombre A → Z" },
+  { value: "nombre-desc", label: "Nombre Z → A" },
+  { value: "precio-asc", label: "Precio menor" },
+  { value: "precio-desc", label: "Precio mayor" },
+  { value: "stock-desc", label: "Más stock" },
+  { value: "stock-asc", label: "Menos stock" },
+  { value: "sku-asc", label: "SKU" },
+  { value: "marca-asc", label: "Marca" },
+  { value: "categoria-asc", label: "Categoría" },
+]
 
 export function getField(product: StockProduct, ...keys: string[]) {
   for (const key of keys) {
@@ -127,6 +152,17 @@ export function sortProducts(products: StockProduct[], sort: ProductSort) {
         return (getProductPrice(b) ?? 0) - (getProductPrice(a) ?? 0)
       case "stock-desc":
         return getProductStock(b) - getProductStock(a)
+      case "stock-asc":
+        return getProductStock(a) - getProductStock(b)
+      case "sku-asc":
+        return getProductSku(a).localeCompare(getProductSku(b), "es")
+      case "marca-asc":
+        return getProductBrand(a).localeCompare(getProductBrand(b), "es")
+      case "categoria-asc":
+        return (
+          getProductCategory(a).localeCompare(getProductCategory(b), "es") ||
+          getProductName(a).localeCompare(getProductName(b), "es")
+        )
       default:
         return 0
     }
@@ -153,8 +189,16 @@ export function productMatchesQuickFilters(
     stockMode: "all" | "in" | "out" | "low"
     priceMin: string
     priceMax: string
+    distributors?: Set<ProductDistributorCode>
+    hideOutOfStock?: boolean
   },
 ) {
+  if (opts.distributors && !opts.distributors.has(getProductDistributor(product))) {
+    return false
+  }
+  if (opts.hideOutOfStock && !isInternalCatalogProduct(product) && getProductStock(product) <= 0) {
+    return false
+  }
   const q = opts.search.trim().toLowerCase()
   if (q) {
     const haystack = [

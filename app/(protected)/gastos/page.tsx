@@ -89,9 +89,9 @@ export default async function GastosPage({ searchParams }: Props) {
     <div className="flex flex-col flex-1 overflow-auto">
       <Header title="Gastos recurrentes" />
       <main className="flex-1 p-6">
-        <p className="text-sm text-white/50 mb-6 max-w-2xl">
-          Proveedores y pagos fijos de la empresa (servicios, cargas sociales, cheques, etc.).
-          Cada proveedor tiene un plazo del 1 al día que definas. Durante ese período te avisamos lo pendiente del mes anterior.
+        <p className="text-sm text-white/50 mb-4">
+          Elegí categoría a la izquierda y gestioná proveedores del mes en la tabla. Plazo de pago
+          del 1 al día que definas.
         </p>
         <Suspense fallback={<p className="text-white/40 text-sm">Cargando…</p>}>
           <GastosView vendors={vendors} month={month} year={year} history={fullHistory} />

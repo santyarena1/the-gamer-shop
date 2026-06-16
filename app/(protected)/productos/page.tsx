@@ -26,7 +26,6 @@ export default async function ProductosPage() {
             products={products}
             fetchedAt={feed.fetchedAt}
             sourceUrl={feed.sourceUrl}
-            internalCount={catalogProducts.length}
           />
         </main>
       </div>
@@ -53,7 +52,6 @@ export default async function ProductosPage() {
               products={catalogProducts}
               fetchedAt={new Date().toISOString()}
               sourceUrl=""
-              internalCount={catalogProducts.length}
               feedUnavailable
             />
           </main>

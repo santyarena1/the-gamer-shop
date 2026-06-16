@@ -2,7 +2,7 @@ import "server-only"
 
 import type { StockProduct } from "@/lib/acustock-feed"
 import { getProductSku } from "@/lib/product-catalog"
-import { INTERNAL_PRODUCT_SOURCE } from "@/lib/product-sources"
+import { ACUSTOCK_PRODUCT_SOURCE, INTERNAL_PRODUCT_SOURCE } from "@/lib/product-sources"
 import { db } from "@/lib/db"
 
 export { INTERNAL_PRODUCT_SOURCE } from "@/lib/product-sources"
@@ -61,10 +61,12 @@ export function mergeFeedWithCatalog(
     catalogProducts.map((p) => getProductSku(p)).filter(Boolean),
   )
 
-  const feedFiltered = feedProducts.filter((p) => {
-    const sku = getProductSku(p)
-    return !sku || !internalSkus.has(sku)
-  })
+  const feedFiltered = feedProducts
+    .filter((p) => {
+      const sku = getProductSku(p)
+      return !sku || !internalSkus.has(sku)
+    })
+    .map((p) => ({ ...p, _source: ACUSTOCK_PRODUCT_SOURCE }))
 
   return [...catalogProducts, ...feedFiltered]
 }

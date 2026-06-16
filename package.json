@@ -6,7 +6,10 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:backup": "powershell -ExecutionPolicy Bypass -File ./scripts/db-backup.ps1",
+    "db:restore": "powershell -ExecutionPolicy Bypass -File ./scripts/db-restore.ps1",
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
