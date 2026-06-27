@@ -26,7 +26,7 @@ export default function TasksView({ tasks, employees, isAdmin, employeeId }: {
   isAdmin: boolean
   employeeId?: string
 }) {
-  const { date: today } = useAppDate()
+  const { date: today, iso: todayIso } = useAppDate()
   const [showCreate, setShowCreate] = useState(false)
   const [filter, setFilter] = useState("ALL")
 
@@ -158,7 +158,7 @@ export default function TasksView({ tasks, employees, isAdmin, employeeId }: {
                 </div>
                 <div>
                   <label className="text-xs text-white/60 mb-1 block">Fecha límite</label>
-                  <input name="dueDate" type="date" className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
+                  <input name="dueDate" type="date" defaultValue={todayIso} className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
                 </div>
               </div>
               {createError && <p className="text-red-400 text-xs">{createError}</p>}

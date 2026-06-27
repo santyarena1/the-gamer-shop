@@ -33,7 +33,7 @@ export default function DebtsView({
   employeeId?: string
   corporateCard?: CorporateCardData | null
 }) {
-  const { date: today } = useAppDate()
+  const { date: today, iso: todayIso } = useAppDate()
   const currentMonth = today.getMonth() + 1
   const currentYear = today.getFullYear()
   const [showCreate, setShowCreate] = useState(false)
@@ -163,7 +163,7 @@ export default function DebtsView({
               </div>
               <div>
                 <label className="text-xs text-white/60 mb-1 block">Fecha límite</label>
-                <input name="dueDate" type="date" className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
+                <input name="dueDate" type="date" defaultValue={todayIso} className="w-full bg-[#0f0f0f] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
               </div>
               {createError && <p className="text-red-400 text-xs">{createError}</p>}
               <button type="submit" className="w-full py-2 bg-green-500 hover:bg-green-400 text-black text-sm font-semibold rounded-lg transition-colors mt-2">

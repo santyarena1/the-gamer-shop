@@ -44,7 +44,7 @@ export default function CorporateCardSection({
   currentMonth: number
   currentYear: number
 }) {
-  const { date: today } = useAppDate()
+  const { date: today, iso: todayIso } = useAppDate()
   const [expanded, setExpanded] = useState(true)
   const [showSetup, setShowSetup] = useState(false)
   const [showStatement, setShowStatement] = useState(false)
@@ -256,8 +256,8 @@ export default function CorporateCardSection({
               </div>
             </div>
             <Field label="Total del resumen (ARS) *" name="totalAmount" type="number" step="0.01" min="0" required />
-            <Field label="Fecha de cierre" name="closingDate" type="date" />
-            <Field label="Vencimiento de pago" name="dueDate" type="date" />
+            <Field label="Fecha de cierre" name="closingDate" type="date" defaultValue={todayIso} />
+            <Field label="Vencimiento de pago" name="dueDate" type="date" defaultValue={todayIso} />
             <Field label="Notas" name="notes" />
             <p className="text-xs text-white/35">
               Se registra como deuda y se descuenta en la próxima liquidación confirmada.

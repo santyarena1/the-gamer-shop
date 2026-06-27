@@ -89,7 +89,7 @@ export default function GastosView({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { date: today } = useAppDate()
+  const { date: today, iso: todayIso } = useAppDate()
   const todayDay = today.getDate()
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>("ALL")
   const [showNewVendor, setShowNewVendor] = useState(false)
@@ -457,7 +457,7 @@ export default function GastosView({
           <form action={payAction} className="space-y-3">
             <input type="hidden" name="paymentId" value={payingId} />
             <Field label="Monto pagado *" name="amount" type="number" step="0.01" min="0" required />
-            <Field label="Fecha de pago" name="paidAt" type="date" />
+            <Field label="Fecha de pago" name="paidAt" type="date" defaultValue={todayIso} />
             <Field label="Notas" name="notes" />
             {payError && <p className="text-red-400 text-xs">{payError}</p>}
             <button

@@ -41,6 +41,8 @@ function NavGroup({
   pathname,
   pendingHref,
   onNavigate,
+  collapsed,
+  onExpand,
 }: {
   label: string
   icon: string
@@ -48,6 +50,8 @@ function NavGroup({
   pathname: string
   pendingHref: string | null
   onNavigate: (href: string) => void
+  collapsed: boolean
+  onExpand: () => void
 }) {
   const active = isGroupActive(pathname, items)
   const [open, setOpen] = useState(active)
@@ -67,6 +71,21 @@ function NavGroup({
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        title={label}
+        onClick={onExpand}
+        className={`w-full flex items-center justify-center py-2 rounded-lg transition-colors ${
+          active ? "nav-active" : "text-white/60 hover:text-white hover:bg-white/5"
+        }`}
+      >
+        <span className="text-base">{icon}</span>
+      </button>
+    )
+  }
 
   return (
     <div ref={ref}>
@@ -122,11 +141,15 @@ function EmployeesNav({
   pathname,
   pendingHref,
   onNavigate,
+  collapsed,
+  onExpand,
 }: {
   employees: NavEmployee[]
   pathname: string
   pendingHref: string | null
   onNavigate: (href: string) => void
+  collapsed: boolean
+  onExpand: () => void
 }) {
   const active =
     pathname === "/empleados" || pathname.startsWith("/empleados/")
@@ -148,6 +171,21 @@ function EmployeesNav({
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        title="Empleados"
+        onClick={onExpand}
+        className={`w-full flex items-center justify-center py-2 rounded-lg transition-colors ${
+          active ? "nav-active" : "text-white/60 hover:text-white hover:bg-white/5"
+        }`}
+      >
+        <span className="text-base">👥</span>
+      </button>
+    )
+  }
 
   return (
     <div ref={ref}>
@@ -229,6 +267,7 @@ function NavLink({
   active,
   pending,
   onNavigate,
+  collapsed,
 }: {
   href: string
   label: string
@@ -236,7 +275,26 @@ function NavLink({
   active: boolean
   pending?: boolean
   onNavigate?: (href: string) => void
+  collapsed?: boolean
 }) {
+  if (collapsed) {
+    return (
+      <Link
+        href={href}
+        prefetch
+        title={label}
+        onClick={() => {
+          if (!active) onNavigate?.(href)
+        }}
+        className={`flex items-center justify-center py-2 rounded-lg transition-colors ${
+          active ? "nav-active" : "text-white/60 hover:text-white hover:bg-white/5"
+        } ${pending ? "opacity-50 pointer-events-none" : ""}`}
+      >
+        <span className="text-base">{icon}</span>
+      </Link>
+    )
+  }
+
   return (
     <Link
       href={href}
@@ -272,6 +330,7 @@ export default function Sidebar({
 }) {
   const pathname = usePathname()
   const [pendingHref, setPendingHref] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     setPendingHref(null)
@@ -281,15 +340,29 @@ export default function Sidebar({
     pathname,
     pendingHref,
     onNavigate: setPendingHref,
+    collapsed,
+    onExpand: () => setCollapsed(false),
   }
 
   return (
-    <aside className="w-60 bg-[#141414] border-r border-white/10 flex flex-col h-full shrink-0">
-      <div className="p-6 border-b border-white/10">
-        <BrandLogo branding={branding} size="sm" />
+    <aside className={`${collapsed ? "w-12" : "w-60"} bg-[#141414] border-r border-white/10 flex flex-col h-full shrink-0 transition-all duration-200`}>
+      <div className={`border-b border-white/10 flex items-center ${collapsed ? "justify-center p-3" : "p-4 gap-2"}`}>
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <BrandLogo branding={branding} size="sm" />
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          title={collapsed ? "Expandir menú" : "Colapsar menú"}
+          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/5 transition-colors text-xs"
+        >
+          {collapsed ? "›" : "‹"}
+        </button>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className={`flex-1 overflow-y-auto space-y-0.5 ${collapsed ? "p-1.5" : "p-4 space-y-1"}`}>
         {role === "ADMIN" ? (
           <>
             <NavLink
@@ -299,6 +372,7 @@ export default function Sidebar({
               active={pathname === "/dashboard"}
               pending={pendingHref === "/dashboard"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <EmployeesNav employees={employees} {...navProps} />
             <NavGroup label="Presupuestos" icon="💬" items={presupuestosGroup} {...navProps} />
@@ -309,6 +383,7 @@ export default function Sidebar({
               active={isPathActive(pathname, "/productos")}
               pending={pendingHref === "/productos"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <NavLink
               href="/generador-imagenes"
@@ -317,6 +392,7 @@ export default function Sidebar({
               active={isPathActive(pathname, "/generador-imagenes")}
               pending={pendingHref === "/generador-imagenes"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <NavLink
               href="/gastos"
@@ -325,6 +401,7 @@ export default function Sidebar({
               active={isPathActive(pathname, "/gastos")}
               pending={pendingHref === "/gastos"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <NavGroup label="Marketing" icon="📣" items={marketingGroup} {...navProps} />
             <NavGroup label="Configuración" icon="⚙" items={configuracionGroup} {...navProps} />
@@ -335,6 +412,7 @@ export default function Sidebar({
               active={isPathActive(pathname, "/tareas")}
               pending={pendingHref === "/tareas"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
           </>
         ) : (
@@ -346,6 +424,7 @@ export default function Sidebar({
               active={pathname === `/empleados/${userId}`}
               pending={pendingHref === `/empleados/${userId}`}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <NavGroup label="Presupuestos" icon="💬" items={presupuestosGroup} {...navProps} />
             <NavLink
@@ -355,6 +434,7 @@ export default function Sidebar({
               active={isPathActive(pathname, "/productos")}
               pending={pendingHref === "/productos"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <NavLink
               href="/generador-imagenes"
@@ -363,6 +443,7 @@ export default function Sidebar({
               active={isPathActive(pathname, "/generador-imagenes")}
               pending={pendingHref === "/generador-imagenes"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
             <NavLink
               href="/tareas"
@@ -371,19 +452,23 @@ export default function Sidebar({
               active={isPathActive(pathname, "/tareas")}
               pending={pendingHref === "/tareas"}
               onNavigate={setPendingHref}
+              collapsed={collapsed}
             />
           </>
         )}
       </nav>
 
-      <div className="p-4 border-t border-white/10">
+      <div className={`border-t border-white/10 ${collapsed ? "p-1.5" : "p-4"}`}>
         <form action={logout}>
           <button
             type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+            title="Cerrar sesión"
+            className={`w-full flex items-center rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors ${
+              collapsed ? "justify-center py-2" : "gap-3 px-3 py-2"
+            }`}
           >
-            <span className="w-5 text-center">⏻</span>
-            Cerrar sesión
+            <span className={collapsed ? "text-base" : "w-5 text-center"}>⏻</span>
+            {!collapsed && "Cerrar sesión"}
           </button>
         </form>
       </div>
